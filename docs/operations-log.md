@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 — 修复 Windows GameTable 测试的 SQLite 句柄释放
+
+- 环境：本地 / GitHub Actions Windows runner 待验证
+- 执行人：Codex 辅助
+- 变更类型：测试修复 / CI 故障处置
+- 变更前：`GameTableServiceTests.ExportAsyncWritesNormalizedGameTables` 在 Windows runner 清理临时目录时失败，`wow.sqlite` 仍被 SQLite 连接或命令占用
+- 变更后：测试将查询连接和命令置于显式 `await using` 作用域，并在删除临时目录前调用 `SqliteConnection.ClearAllPools()`
+- 操作摘要：复用 `SqliteTableWriterTests` 的 Windows 句柄清理模式，未改变生产代码或数据库内容
+- 备份/回滚点：不适用；仅修改测试
+- 验证结果：`git diff --check` 通过；本机未安装 `dotnet`，需由 GitHub Windows CI 验证
+- 结果：待 CI 验证
+- 关联：`wow-db/tests/WowDb.Tests/GameTableServiceTests.cs`
+
 ### 2026-08-20 15:34 +08:00 — 修复首轮 CI 的依赖锁和 Windows SQLite 清理失败
 
 - 环境：本地 / GitHub CI 修复
