@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 18:00 +08:00 — 增加 backup-health 原子写入器
+
+- 环境：本地开发 / 隔离测试
+- 执行人：Codex 辅助
+- 变更类型：备份门禁 / 文件一致性 / 测试
+- 变更前：`backup-health` 只有读取和单调性校验，双目标验证完成后没有安全的状态文件写入实现
+- 变更后：新增 `writeBackupHealthAtomic()`；读取并校验旧状态，拒绝损坏文件和回拨/重放，临时文件使用 `wx` 创建并 `fsync` 后原子替换，文件权限为 `0600`
+- 操作摘要：writer 仅允许单写者调用，首次写入支持自动创建父目录；不会覆盖损坏的旧状态
+- 备份/回滚点：未写入真实主库或生产 backup-health；可回滚至提交前版本
+- 验证结果：`npm run typecheck` 和 backup-health 测试 10/10 通过；覆盖首次写入、连续推进、JSON 损坏和结构损坏保护
+- 结果：成功；双目标上传/读回 adapter 和 legacy backup 切换仍未完成
+- 关联：`loot-allocator/src/backup-health.ts`、`loot-allocator/tests/backup-health.test.ts`
+
 ### 2026-08-20 17:44 +08:00 — 将 backup-health 接入显式系统健康门禁
 
 - 环境：本地开发 / 隔离测试

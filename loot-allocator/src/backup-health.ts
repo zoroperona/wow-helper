@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto";
+import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
+import { dirname, join } from "node:path";
+
 export type BackupGateLevel = "healthy" | "warning" | "blocked" | "recovery-only";
 
 export interface BackupHealthTargetReceipt {
@@ -69,6 +73,42 @@ export function assertMonotonicBackupHealth(previous: unknown, next: unknown): B
   return nextParsed.record;
 }
 
+/**
+ * Persist the verified backup gate as one complete file. There is intentionally
+ * one writer (the backup verifier); callers must not run this concurrently.
+ */
+export async function writeBackupHealthAtomic(path: string, next: unknown): Promise<BackupHealthRecord> {
+  let previous: unknown = null;
+  let hasPrevious = false;
+  try {
+    previous = JSON.parse(await readFile(path, "utf8"));
+    hasPrevious = true;
+  } catch (error) {
+    if (!isMissingFile(error)) throw new Error(`读取现有 backup-health 失败：${errorMessage(error)}`);
+  }
+
+  if (hasPrevious && !parseRecord(previous).record) {
+    throw new Error("现有 backup-health 损坏，拒绝覆盖");
+  }
+  const record = assertMonotonicBackupHealth(previous, next);
+  const directory = dirname(path);
+  await mkdir(directory, { recursive: true });
+  const temporaryPath = join(directory, `.${path.split(/[\\/]/).pop() || "backup-health.json"}.${randomUUID()}.tmp`);
+  let handle: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    handle = await open(temporaryPath, "wx", 0o600);
+    await handle.writeFile(`${JSON.stringify(record, null, 2)}\n`, "utf8");
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
+    await rename(temporaryPath, path);
+    return record;
+  } finally {
+    if (handle) await handle.close().catch(() => undefined);
+    await unlink(temporaryPath).catch(() => undefined);
+  }
+}
+
 function parseRecord(value: unknown): {record: BackupHealthRecord | null; issues: string[]} {
   const issues: string[] = [];
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -113,6 +153,14 @@ function parseRecord(value: unknown): {record: BackupHealthRecord | null; issues
 
 function validTimestamp(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && Number.isFinite(Date.parse(value));
+}
+
+function isMissingFile(error: unknown): boolean {
+  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT");
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function result(
