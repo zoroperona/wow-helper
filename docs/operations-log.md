@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 18:09 +08:00 — 增加双目标 restic 备份验证适配器
+
+- 环境：本地开发 / 隔离测试
+- 执行人：Codex 辅助
+- 变更类型：备份 / restic / 验证器 / 测试
+- 变更前：只有 SQLite prepare bundle，尚无双目标上传、读回和 receipt 流程
+- 变更后：新增 `backup:verify`；按 manifest 指定顺序向两个显式配置的 restic 仓库上传 bundle，分别 restore 校验 manifest/SHA-256/bytes/quick_check，生成不可变 verification receipt 并分别读回校验；可选调用 backup-health 原子 writer
+- 操作摘要：凭据只通过 `RESTIC_PASSWORD_FILE` 环境传给 restic，不写命令行和日志；未配置目标时不会运行；未替换现有每日 legacy backup
+- 备份/回滚点：未连接真实 restic 仓库，未写入主库或 backup-health
+- 验证结果：脚本语法、配置/manifest fail-closed 测试、Node typecheck 和全量测试 16 个文件/57 个测试通过；真实上传、恢复演练待管理员提供隔离仓库并确认目标配置
+- 结果：适配器代码完成，尚未启用生产备份切换
+- 关联：`loot-allocator/scripts/verify-database-backup.mjs`、`loot-allocator/tests/backup-verify.test.ts`
+
 ### 2026-08-20 18:00 +08:00 — 增加 backup-health 原子写入器
 
 - 环境：本地开发 / 隔离测试
