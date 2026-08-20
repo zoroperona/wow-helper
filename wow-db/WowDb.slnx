@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/WowDb.Cli/WowDb.Cli.csproj" />
+  <Project Path="tests/WowDb.Tests/WowDb.Tests.csproj" />
+</Solution>
+

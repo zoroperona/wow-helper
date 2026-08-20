@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="团队模拟收益、装备与拾取记录" />
+    <title>团队数据 · 12.1</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!--
+      Public publication assumptions:
+      - The site is read-only and receives a sanitized snapshot generated from the local database.
+      - Team summary is the default route; member reports, raid loot, and pickup history are secondary views.
+      - No administrator control or raw SimulationCraft profile is present in this build.
+    -->
+    <header class="site-header">
+      <a class="brand" href="#/team" aria-label="团队数据首页">
+        <span class="brand-mark" aria-hidden="true">W</span>
+        <span><strong>团队数据</strong><small id="seasonLabel">赛季 --</small></span>
+      </a>
+      <nav class="primary-nav" aria-label="主导航">
+        <a href="#/team" data-nav="team">成员摘要</a>
+        <a href="#/loot" data-nav="loot">团本掉落</a>
+        <a href="#/dungeons" data-nav="dungeons">大秘境</a>
+        <a href="#/loadout" data-nav="loadout">动态配装</a>
+        <a href="#/history" data-nav="history">拾取记录</a>
+      </nav>
+      <div class="publication-state">
+        <span>最近发布</span>
+        <strong id="publishedAt">读取中</strong>
+      </div>
+    </header>
+
+    <div class="stale-banner" id="staleBanner" hidden>这份数据已超过一天未发布</div>
+
+    <main id="app" aria-live="polite">
+      <section class="loading-view">
+        <span class="loading-line"></span>
+        <span class="loading-line short"></span>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span id="footerSeason">团队数据</span>
+      <span>只读发布页</span>
+      <span id="footerRevision"></span>
+    </footer>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

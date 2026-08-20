@@ -1,0 +1,11 @@
+node_modules/
+.npm-cache/
+dist/
+data/*
+!data/.gitkeep
+backups/*
+!backups/.gitkeep
+artifacts/
+pages-dist/
+*.log
+.DS_Store

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>wow-db</AssemblyName>
+    <RootNamespace>WowDb</RootNamespace>
+    <Version>0.2.0</Version>
+    <DebugType>embedded</DebugType>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DBCD" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageReference Include="TACTSharp" Version="0.2.0-alpha" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="WowDb.Tests" />
+  </ItemGroup>
+</Project>

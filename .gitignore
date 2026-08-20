@@ -1,0 +1,29 @@
+# Workspace-local and generated data
+.DS_Store
+*.log
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+*.zip
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Common generated directories
+node_modules/
+dist/
+bin/
+obj/
+artifacts/
+transfer/
+pages-dist/
+

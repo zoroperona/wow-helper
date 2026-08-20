@@ -1,0 +1,10 @@
+cache/*
+!cache/.gitkeep
+output/*
+!output/.gitkeep
+artifacts/
+transfer/
+**/bin/
+**/obj/
+*.user
+*.suo

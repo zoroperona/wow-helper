@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>12.1 掉落分配</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true">W</div>
+        <div>
+          <h1>掉落分配</h1>
+          <p id="seasonLabel">赛季 12.1</p>
+        </div>
+      </div>
+      <nav class="primary-nav" aria-label="主导航">
+        <button class="nav-button is-active" type="button" data-view="allocation">掉落分配</button>
+        <button class="nav-button" type="button" data-view="roster">团队名单</button>
+        <button class="nav-button" type="button" data-view="history">拾取记录</button>
+        <button class="nav-button" type="button" data-view="rules">规则配置</button>
+        <button class="nav-button health-nav" id="healthNavButton" type="button" data-view="health">
+          <span class="health-dot health-unknown" id="healthNavDot" aria-hidden="true"></span>
+          数据状态
+        </button>
+      </nav>
+      <div class="header-actions">
+        <button class="button button-secondary" id="publishButton" type="button">发布公开页</button>
+        <button class="button button-secondary" id="backupButton" type="button">导出数据库</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="app-view" id="allocationView" data-view-panel="allocation">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">分配工作台</p>
+            <h2>Boss 掉落分配</h2>
+          </div>
+          <button class="button button-secondary" id="refreshCatalogButton" type="button">刷新掉落</button>
+        </div>
+
+        <section class="summary-strip" aria-label="分配汇总">
+          <div><span>当前赛季</span><strong id="allocationSeason">12.1</strong></div>
+          <div><span>团队人数</span><strong id="allocationPlayerCount">0</strong></div>
+          <div><span>本季已分配</span><strong id="allocationCount">0</strong></div>
+          <div><span>计入拾取</span><strong id="allocationPickupTotal">0</strong></div>
+        </section>
+
+        <section class="allocation-filters" aria-label="掉落筛选">
+          <fieldset class="difficulty-control">
+            <legend>掉落难度</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="lootDifficulty" value="lfr" /><span>随机</span></label>
+              <label><input type="radio" name="lootDifficulty" value="normal" /><span>普通</span></label>
+              <label><input type="radio" name="lootDifficulty" value="heroic" checked /><span>英雄</span></label>
+              <label><input type="radio" name="lootDifficulty" value="mythic" /><span>史诗</span></label>
+            </div>
+          </fieldset>
+          <label class="legacy-toggle"><input type="checkbox" id="showLegacyRaids" /><span>显示 12.0 副本</span></label>
+          <span class="filter-note">装等为当前 wow-db 的难度参考值</span>
+        </section>
+
+        <section class="allocation-workspace">
+          <section class="workspace-panel boss-panel" aria-labelledby="bossPanelTitle">
+            <div class="panel-heading">
+              <div>
+                <span class="panel-kicker">副本进度</span>
+                <h3 id="bossPanelTitle">副本与 Boss</h3>
+              </div>
+              <span class="connection-state" id="catalogState">未连接</span>
+            </div>
+            <div class="panel-empty" id="raidList">暂无副本数据</div>
+          </section>
+
+          <section class="workspace-panel loot-panel" aria-labelledby="lootPanelTitle">
+            <div class="panel-heading">
+              <div>
+                <span class="panel-kicker">当前掉落</span>
+                <h3 id="lootPanelTitle">掉落装备</h3>
+              </div>
+              <span class="panel-count" id="lootCount">0 件</span>
+            </div>
+            <div class="panel-empty" id="lootList">选择 Boss</div>
+          </section>
+
+          <section class="workspace-panel candidate-panel" aria-labelledby="candidatePanelTitle">
+            <div class="panel-heading">
+              <div>
+                <span class="panel-kicker">团队排序</span>
+                <h3 id="candidatePanelTitle">分配候选</h3>
+              </div>
+              <span class="effect-reference" hidden id="effectReference">特效参考</span>
+            </div>
+            <div class="candidate-columns" aria-hidden="true">
+              <span>玩家</span><span>职责</span><span>收益</span><span>拾取</span><span>操作</span>
+            </div>
+            <div class="panel-empty" id="candidateList">选择一件装备</div>
+          </section>
+        </section>
+      </section>
+
+      <section class="app-view" id="rosterView" data-view-panel="roster" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">团队配置</p>
+            <h2>团员与收益缓存</h2>
+          </div>
+          <div class="section-actions">
+            <span class="simulation-activity" id="simulationActivity" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="simulationActivityText">正在模拟</span>
+            </span>
+            <button class="button button-secondary" id="simulateStaleButton" type="button" title="模拟所有超过一天未更新收益的团员">全量模拟</button>
+            <button class="button button-primary" id="addPlayerButton" type="button">添加团员</button>
+          </div>
+        </div>
+
+        <section class="summary-strip" aria-label="团队汇总">
+          <div><span>团员</span><strong id="playerCount">0</strong></div>
+          <div><span>输出</span><strong id="damageCount">0</strong></div>
+          <div><span>收益已更新</span><strong id="weightCount">0</strong></div>
+          <div><span>活动版本</span><strong id="gameVersion">12.1</strong></div>
+        </section>
+
+        <section class="roster-shell">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th aria-sort="none"><button class="sort-button sort-button-reset" type="button" data-roster-sort="role" title="恢复默认职责排序">职责</button></th>
+                  <th>角色</th>
+                  <th>职业 / 专精</th>
+                  <th>主属性</th>
+                  <th class="tier-set-column" aria-sort="none"><button class="sort-button" type="button" data-roster-sort="tier">当季套装<span class="sort-indicator" aria-hidden="true"></span></button></th>
+                  <th aria-sort="none"><button class="sort-button" type="button" data-roster-sort="pickup">本季拾取<span class="sort-indicator" aria-hidden="true"></span></button></th>
+                  <th>收益缓存</th>
+                  <th>模拟版本</th>
+                  <th aria-sort="none"><button class="sort-button" type="button" data-roster-sort="dps">单体模拟输出<span class="sort-indicator" aria-hidden="true"></span></button></th>
+                  <th class="actions-column">操作</th>
+                </tr>
+              </thead>
+              <tbody id="rosterBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState" hidden>暂无团员</div>
+          </div>
+        </section>
+      </section>
+
+      <section class="app-view" id="historyView" data-view-panel="history" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">赛季账本</p>
+            <h2>拾取记录</h2>
+          </div>
+          <span class="version-badge" id="historyVersion">12.1</span>
+        </div>
+        <section class="history-head" aria-hidden="true">
+          <span>时间</span><span>玩家</span><span>Boss</span><span>装备</span><span>拾取 / 操作</span>
+        </section>
+        <section class="history-list" id="historyList"></section>
+      </section>
+
+      <section class="app-view" id="rulesView" data-view-panel="rules" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">赛季规则</p>
+            <h2>装备拾取数</h2>
+          </div>
+          <span class="version-badge" id="rulesVersion">12.1</span>
+        </div>
+        <section class="rules-head" aria-hidden="true">
+          <span>装备类型</span><span>拾取数</span><span>计入总数</span><span>操作</span>
+        </section>
+        <section class="rules-list" id="rulesList"></section>
+      </section>
+
+      <section class="app-view" id="healthView" data-view-panel="health" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">数据可信度</p>
+            <h2>版本与依赖状态</h2>
+          </div>
+          <button class="button button-secondary" id="refreshHealthButton" type="button">重新检查</button>
+        </div>
+
+        <section class="health-overview health-unknown" id="healthOverview" aria-live="polite">
+          <div>
+            <span class="health-dot health-unknown" id="healthOverviewDot" aria-hidden="true"></span>
+            <strong id="healthOverviewTitle">正在检查数据状态</strong>
+          </div>
+          <span id="healthCheckedAt">-</span>
+        </section>
+
+        <section class="health-grid" id="healthGrid" aria-label="依赖状态"></section>
+
+        <section class="health-issues" aria-labelledby="healthIssuesTitle">
+          <div class="health-section-heading">
+            <h3 id="healthIssuesTitle">需要处理</h3>
+            <span id="healthIssueCount">0 项</span>
+          </div>
+          <div id="healthIssueList" class="health-issue-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="playerDialog">
+      <form class="dialog-form" id="playerForm">
+        <input type="hidden" name="playerId" />
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">团队名单</p>
+            <h3 id="playerDialogTitle">添加团员</h3>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="playerDialog" aria-label="关闭">×</button>
+        </div>
+        <label>
+          <span>角色名</span>
+          <input name="name" autocomplete="off" required maxlength="64" />
+        </label>
+        <label class="realm-field">
+          <span>服务器</span>
+          <input name="realm" id="realmInput" autocomplete="off" aria-autocomplete="list" aria-controls="realmOptions" aria-expanded="false" required />
+          <div class="realm-options" id="realmOptions" role="listbox" hidden></div>
+        </label>
+        <fieldset>
+          <legend>团队职责</legend>
+          <div class="segmented-control">
+            <label><input type="radio" name="raidRole" value="tank" /><span>坦克</span></label>
+            <label><input type="radio" name="raidRole" value="melee" checked /><span>近战</span></label>
+            <label><input type="radio" name="raidRole" value="ranged" /><span>远程</span></label>
+            <label><input type="radio" name="raidRole" value="healer" /><span>治疗</span></label>
+          </div>
+        </fieldset>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-dialog="playerDialog">取消</button>
+          <button class="button button-primary" id="playerSubmitButton" type="submit">添加并读取角色</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="weightDialog">
+      <form class="dialog-form" id="weightForm">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">收益缓存</p>
+            <h3 id="weightDialogTitle">导入模拟结果</h3>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="weightDialog" aria-label="关闭">×</button>
+        </div>
+        <input type="hidden" name="playerId" />
+        <label>
+          <span>DPSWOW 属性权重结果链接</span>
+          <input
+            name="resultUrl"
+            type="url"
+            placeholder="https://www.dpswow.com/gear/result/weight?id=..."
+            required
+          />
+        </label>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-dialog="weightDialog">取消</button>
+          <button class="button button-primary" type="submit">更新收益缓存</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="weightViewDialog" class="wide-dialog">
+      <div class="dialog-form">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">最新本地缓存</p>
+            <h3 id="weightViewTitle">属性收益</h3>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="weightViewDialog" aria-label="关闭">×</button>
+        </div>
+        <div class="weight-meta" id="weightMeta"></div>
+        <div class="weight-grid" id="weightGrid"></div>
+        <div class="dialog-actions">
+          <a class="button button-secondary" id="rawSimulationLink" href="#" target="_blank" rel="noopener" hidden>查看原始模拟</a>
+          <a class="button button-secondary" id="weightJsonLink" href="#">导出 JSON</a>
+          <button class="button button-primary" type="button" data-close-dialog="weightViewDialog">完成</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="equipmentDialog" class="equipment-dialog">
+      <div class="dialog-form equipment-dialog-content">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">英雄榜装备快照</p>
+            <h3 id="equipmentTitle">角色装备</h3>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="equipmentDialog" aria-label="关闭">×</button>
+        </div>
+        <div class="equipment-summary" id="equipmentSummary"></div>
+        <section class="character-stats" id="characterStats" aria-label="角色属性"></section>
+        <div class="equipment-list" id="equipmentList"></div>
+        <div class="dialog-actions">
+          <button class="button button-primary" type="button" data-close-dialog="equipmentDialog">完成</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="allocationDeleteDialog">
+      <form class="dialog-form" id="allocationDeleteForm">
+        <input type="hidden" name="allocationId" />
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">拾取记录</p>
+            <h3>删除拾取记录</h3>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="allocationDeleteDialog" aria-label="关闭">×</button>
+        </div>
+        <p class="confirmation-copy">确认删除以下拾取记录？</p>
+        <div class="confirmation-record">
+          <strong id="allocationDeleteItem"></strong>
+          <span id="allocationDeleteMeta"></span>
+        </div>
+        <p class="confirmation-warning">删除后将重新计算该玩家的本赛季拾取数量，此操作无法撤销。</p>
+        <div class="dialog-actions">
+          <button class="button button-secondary" type="button" data-close-dialog="allocationDeleteDialog">取消</button>
+          <button class="button button-danger" id="allocationDeleteSubmit" type="submit">确认删除</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <div class="hover-tooltip" id="hoverTooltip" role="tooltip" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

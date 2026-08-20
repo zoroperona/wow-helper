@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>本地模拟结果</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/simulation-result.css" />
+  </head>
+  <body class="report-body">
+    <header class="report-toolbar">
+      <a class="report-back" href="/#roster">← 返回团队名单</a>
+      <div class="report-toolbar-actions">
+        <button class="button button-secondary" id="toggleProfileButton" type="button">查看 SimC 配置</button>
+        <button class="button button-primary" id="printButton" type="button">打印 / 保存图片</button>
+      </div>
+    </header>
+
+    <main class="simulation-report" id="simulationReport">
+      <div class="report-loading" id="reportLoading">正在读取本地模拟结果…</div>
+    </main>
+
+    <dialog id="profileDialog" class="profile-dialog">
+      <div class="dialog-form">
+        <div class="dialog-header">
+          <div><p class="eyebrow">SimulationCraft</p><h3>本次模拟配置</h3></div>
+          <button class="icon-button" id="closeProfileButton" type="button" aria-label="关闭">×</button>
+        </div>
+        <pre id="profileContent"></pre>
+      </div>
+    </dialog>
+
+    <script src="/simulation-result.js" type="module"></script>
+  </body>
+</html>
