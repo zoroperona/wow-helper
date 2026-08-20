@@ -9,16 +9,34 @@ public sealed class WindowsProcessControlTests
     public async Task NamedMutexRejectsASecondThread()
     {
         var name = $"mutex-test-{Guid.NewGuid():N}";
-        using var first = NamedMutexLease.TryAcquire(name);
-        Assert.IsNotNull(first);
-
-        var secondAcquired = await Task.Run(() =>
+        using var acquired = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        NamedMutexLease? first = null;
+        var owner = Task.Run(() =>
         {
-            using var second = NamedMutexLease.TryAcquire(name);
-            return second is not null;
+            first = NamedMutexLease.TryAcquire(name);
+            acquired.Set();
+            release.Wait();
+            first?.Dispose();
         });
+        acquired.Wait();
+        try
+        {
+            Assert.IsNotNull(first);
 
-        Assert.IsFalse(secondAcquired);
+            var secondAcquired = await Task.Run(() =>
+            {
+                using var second = NamedMutexLease.TryAcquire(name);
+                return second is not null;
+            });
+
+            Assert.IsFalse(secondAcquired);
+        }
+        finally
+        {
+            release.Set();
+            await owner;
+        }
     }
 
     [TestMethod]

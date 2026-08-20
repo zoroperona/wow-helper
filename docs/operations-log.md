@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 18:18 +08:00 — 修正 Windows named mutex 行为测试线程归属
+
+- 环境：Windows GitHub CI / 本地代码
+- 执行人：Codex 辅助
+- 变更类型：Windows runtime / CI 测试 / migration 启动门禁
+- 变更前：`NamedMutexRejectsASecondThread` 在 `await` 后由非拥有线程释放 mutex，Windows 抛出 `Object synchronization method was called from an unsynchronized block`
+- 变更后：测试由专用 owner 线程持有并释放 mutex，主线程只执行竞争验证；增加 `finally` 释放信号，避免失败时遗留线程；Node 应用新增 `AUTO_MIGRATE=0` 外部 migration ledger/quick_check fail-closed 检查
+- 操作摘要：未改变 ProcessHost 生产 mutex 语义；未执行真实 Windows runtime 或业务主库 migration
+- 备份/回滚点：可回滚至提交 `5bbe4dc`
+- 验证结果：待 Windows CI 运行；Node typecheck/测试在本地继续执行
+- 结果：修复已提交，等待 CI 验证
+- 关联：`runtime/tests/WowHelper.ProcessHost.Tests/WindowsProcessControlTests.cs`、`loot-allocator/src/db.ts`
+
 ### 2026-08-20 18:09 +08:00 — 增加双目标 restic 备份验证适配器
 
 - 环境：本地开发 / 隔离测试

@@ -212,7 +212,8 @@ export class LootDatabase {
     sqlite.exec("PRAGMA journal_mode = WAL");
     sqlite.exec("PRAGMA synchronous = NORMAL");
     const database = new LootDatabase(path, sqlite);
-    database.migrate();
+    if (process.env.AUTO_MIGRATE === "0") database.assertExternalMigrationTrusted();
+    else database.migrate();
     database.ensureDefaultSeason();
     database.ensureDefaultLootRules();
     return database;
@@ -1061,6 +1062,45 @@ export class LootDatabase {
     } catch (error) {
       this.sqlite.exec("ROLLBACK");
       throw error;
+    }
+  }
+
+  private assertExternalMigrationTrusted(): void {
+    const quickCheck = String(this.sqlite.prepare("PRAGMA quick_check").get()?.quick_check || "unknown");
+    if (quickCheck !== "ok") throw new Error(`外部 migration 启动门禁失败：SQLite quick_check=${quickCheck}`);
+
+    const tableExists = (name: string) => Boolean(this.sqlite
+      .prepare("SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = ?")
+      .get(name));
+    if (!tableExists("schema_migrations") || !tableExists("migration_attempts")) {
+      throw new Error("外部 migration 启动门禁失败：缺少 migration ledger");
+    }
+
+    const trusted = this.sqlite.prepare(`
+      SELECT m.migration_id, m.checksum, m.to_schema,
+             a.attempt_id AS success_attempt_id
+        FROM schema_migrations m
+        LEFT JOIN migration_attempts a
+          ON a.migration_id = m.migration_id
+         AND a.checksum = m.checksum
+         AND a.status = 'success'
+       ORDER BY applied_at DESC, migration_id DESC
+       LIMIT 1
+    `).get() as { migration_id?: string; checksum?: string; to_schema?: number; success_attempt_id?: string } | undefined;
+    const schemaVersion = this.sqlite.prepare("SELECT value FROM app_meta WHERE key = 'schema_version'").get() as { value?: string } | undefined;
+    if (!trusted || !trusted.success_attempt_id || !/^\d{4}_[a-z0-9-]+$/.test(String(trusted.migration_id)) || !/^[0-9a-f]{64}$/.test(String(trusted.checksum)) || String(schemaVersion?.value) !== String(trusted.to_schema)) {
+      throw new Error("外部 migration 启动门禁失败：没有可信 success migration");
+    }
+
+    const untrustedAttempt = this.sqlite.prepare(`
+      SELECT attempt_id, migration_id, status
+        FROM migration_attempts
+       WHERE status IN ('running', 'unknown')
+       ORDER BY started_at DESC
+       LIMIT 1
+    `).get() as { attempt_id?: string; migration_id?: string; status?: string } | undefined;
+    if (untrustedAttempt) {
+      throw new Error(`外部 migration 启动门禁失败：存在未可信 attempt ${untrustedAttempt.attempt_id}/${untrustedAttempt.migration_id}/${untrustedAttempt.status}`);
     }
   }
 }
