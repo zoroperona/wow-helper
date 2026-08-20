@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 18:21 +08:00 — 验证 AUTO_MIGRATE=0 启动门禁
+
+- 环境：本地隔离数据库
+- 执行人：Codex 辅助
+- 变更类型：migration / 启动门禁 / 验证
+- 变更前：启动门禁的 trusted migration 查询排序未限定表别名，尚未做外部 baseline 后启动验证
+- 变更后：查询明确使用 `schema_migrations` 表别名；完成 schema 5 初始化、外部 `0005_baseline`、`AUTO_MIGRATE=0` 应用启动和关闭
+- 操作摘要：仅操作临时数据库，未修改真实主库；验证应用不会在该模式下执行内嵌 migration
+- 备份/回滚点：临时目录已清理；真实主库未执行 baseline
+- 验证结果：隔离启动验证通过；Node typecheck、全量测试 16/57、build 通过
+- 结果：成功
+- 关联：`loot-allocator/src/db.ts`
+
 ### 2026-08-20 18:18 +08:00 — 修正 Windows named mutex 行为测试线程归属
 
 - 环境：Windows GitHub CI / 本地代码

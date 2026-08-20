@@ -1084,7 +1084,7 @@ export class LootDatabase {
           ON a.migration_id = m.migration_id
          AND a.checksum = m.checksum
          AND a.status = 'success'
-       ORDER BY applied_at DESC, migration_id DESC
+       ORDER BY m.applied_at DESC, m.migration_id DESC
        LIMIT 1
     `).get() as { migration_id?: string; checksum?: string; to_schema?: number; success_attempt_id?: string } | undefined;
     const schemaVersion = this.sqlite.prepare("SELECT value FROM app_meta WHERE key = 'schema_version'").get() as { value?: string } | undefined;
