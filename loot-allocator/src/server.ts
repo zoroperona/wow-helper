@@ -32,6 +32,7 @@ const app = createApp({
     wowDbPath: config.wowDbPath,
     databasePath: config.databasePath,
     backupsPath: config.backupsPath,
+    backupHealthPath: config.backupHealthPath,
     appRoot,
     dailyTaskStatusPath: config.dailyTaskStatusPath,
     scheduledTaskExpected: config.scheduledTaskExpected,

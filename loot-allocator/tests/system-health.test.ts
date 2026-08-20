@@ -45,9 +45,19 @@ describe("system health", () => {
       summary: "wow-db 不可用或校验失败",
     });
   });
+
+  it("uses backup-health content age when the explicit gate is configured", async () => {
+    const fixture = await createFixture({ simcBuild: 69299, wowDbBuild: 69299, backupHealthAgeHours: 23 });
+    const report = await fixture.service.getReport(true);
+
+    expect(report.components.find((entry) => entry.id === "database")).toMatchObject({
+      status: "critical",
+    });
+    expect(report.issues.map((entry) => entry.message)).toContain("verified backup 内容已超过 22 小时");
+  });
 });
 
-async function createFixture(input: { simcBuild: number; wowDbBuild: number | null }) {
+async function createFixture(input: { simcBuild: number; wowDbBuild: number | null; backupHealthAgeHours?: number }) {
   const root = await mkdtemp(join(tmpdir(), "wow-health-test-"));
   cleanupPaths.push(root);
   const simcPath = join(root, "simc");
@@ -55,6 +65,7 @@ async function createFixture(input: { simcBuild: number; wowDbBuild: number | nu
   const wowDbPath = join(root, "wow.sqlite");
   const databasePath = join(root, "app.sqlite");
   const backupsPath = join(root, "backups");
+  const backupHealthPath = join(root, "backup-health.json");
   const appRoot = join(root, "app");
   await Promise.all([
     mkdir(simcRunsPath, { recursive: true }),
@@ -76,6 +87,20 @@ async function createFixture(input: { simcBuild: number; wowDbBuild: number | nu
   await writeFile(join(appRoot, "src", "server.ts"), "export {};\n", "utf8");
   await writeFile(join(appRoot, "dist", "server.js"), "export {};\n", "utf8");
   await writeFile(join(backupsPath, "backup.sqlite"), "fixture", "utf8");
+  if (input.backupHealthAgeHours !== undefined) {
+    const generatedAt = new Date(new Date("2026-08-18T12:00:00.000Z").getTime() - input.backupHealthAgeHours * 60 * 60 * 1000);
+    await writeFile(backupHealthPath, JSON.stringify({
+      schemaVersion: 1,
+      backupId: "backup-v1-system-health",
+      generatedAt: generatedAt.toISOString(),
+      verifiedAt: "2026-08-18T11:59:00.000Z",
+      verifierVersion: "test",
+      targetReceipts: [
+        { targetId: "local-restic", receiptSha256: "a".repeat(64) },
+        { targetId: "offsite-worm", receiptSha256: "a".repeat(64) },
+      ],
+    }), "utf8");
+  }
   createAppDatabase(databasePath);
   if (input.wowDbBuild) createWowDatabase(wowDbPath, input.wowDbBuild);
 
@@ -86,6 +111,7 @@ async function createFixture(input: { simcBuild: number; wowDbBuild: number | nu
       wowDbPath,
       databasePath,
       backupsPath,
+      backupHealthPath: input.backupHealthAgeHours === undefined ? undefined : backupHealthPath,
       appRoot,
       cacheMs: 0,
       now: () => new Date("2026-08-18T12:00:00.000Z"),

@@ -37,6 +37,7 @@ runtime manifest 最小结构如下，所有路径必须是 Windows 绝对路径
     "simcRunsPath": "D:\\WowHelper\\loot-allocator\\data\\simc-runs",
     "backupsPath": "D:\\WowHelper\\loot-allocator\\backups",
     "dailyStatusPath": "D:\\WowHelper\\loot-allocator\\data\\runtime\\daily-sim-status.json",
+    "backupHealthPath": "D:\\WowHelper\\loot-allocator\\data\\runtime\\backup-health.json",
     "statusDirectory": "D:\\WowHelper\\loot-allocator\\data\\runtime\\task-status",
     "handleExe": "D:\\WowHelper\\runtime\\Sysinternals\\handle64.exe",
     "processHostExe": "D:\\WowHelper\\runtime\\ProcessHost\\WowHelper.ProcessHost.exe"

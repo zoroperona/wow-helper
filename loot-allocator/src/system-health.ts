@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import type { DailyTaskStatus } from "./task-status.js";
+import { evaluateBackupHealth } from "./backup-health.js";
 
 export type HealthStatus = "healthy" | "warning" | "critical";
 
@@ -85,6 +86,7 @@ export class SystemHealthService {
     wowDbPath: string;
     databasePath: string;
     backupsPath: string;
+    backupHealthPath?: string;
     appRoot: string;
     cacheMs?: number;
     now?: () => Date;
@@ -102,7 +104,7 @@ export class SystemHealthService {
       inspectSimc(this.options.simcPath, this.options.simcRunsPath, now),
       inspectWowDb(this.options.wowDbPath, now),
       inspectAppDatabase(this.options.databasePath),
-      inspectBackups(this.options.backupsPath, now),
+      inspectBackups(this.options.backupsPath, now, this.options.backupHealthPath),
       inspectRuntime(
         this.options.appRoot,
         this.options.dailyTaskStatusPath || join(this.options.appRoot, "data", "runtime", "daily-sim-status.json"),
@@ -308,7 +310,28 @@ async function inspectAppDatabase(path: string): Promise<AppDbIdentity> {
   return result;
 }
 
-async function inspectBackups(path: string, now: Date): Promise<{ latestAt: string | null; count: number; issues: string[] }> {
+async function inspectBackups(path: string, now: Date, backupHealthPath?: string): Promise<{ latestAt: string | null; count: number; issues: string[]; status: HealthStatus }> {
+  if (backupHealthPath) {
+    try {
+      const health = evaluateBackupHealth(JSON.parse(await readFile(backupHealthPath, "utf8")), now);
+      const files = (await readdir(path, { withFileTypes: true })).filter((entry) => entry.isFile() && entry.name.endsWith(".sqlite"));
+      const status: HealthStatus = health.level === "healthy" ? "healthy" : health.level === "warning" ? "warning" : "critical";
+      const issues = health.issues.length ? health.issues : [`backup-health：${health.level}`];
+      return {
+        latestAt: health.record?.generatedAt || null,
+        count: files.length,
+        issues,
+        status,
+      };
+    } catch (error) {
+      return {
+        latestAt: null,
+        count: 0,
+        issues: [`读取 backup-health 失败：${errorMessage(error)}`],
+        status: "critical",
+      };
+    }
+  }
   try {
     const files = (await readdir(path, { withFileTypes: true })).filter((entry) => entry.isFile() && entry.name.endsWith(".sqlite"));
     const timestamps = await Promise.all(files.map(async (entry) => (await stat(join(path, entry.name))).mtime));
@@ -317,9 +340,9 @@ async function inspectBackups(path: string, now: Date): Promise<{ latestAt: stri
     const issues = !latestAt
       ? ["尚无数据库备份"]
       : daysBetween(latestAt, now) > 2 ? ["最近一次数据库备份已超过 2 天"] : [];
-    return { latestAt, count: files.length, issues };
+    return { latestAt, count: files.length, issues, status: issues.length ? "warning" : "healthy" };
   } catch (error) {
-    return { latestAt: null, count: 0, issues: [`读取备份目录失败：${errorMessage(error)}`] };
+    return { latestAt: null, count: 0, issues: [`读取备份目录失败：${errorMessage(error)}`], status: "critical" };
   }
 }
 
@@ -451,13 +474,13 @@ function simulationCacheComponent(database: AppDbIdentity, simc: SimcIdentity): 
 
 function databaseComponent(
   identity: AppDbIdentity,
-  backup: { latestAt: string | null; count: number; issues: string[] },
+  backup: { latestAt: string | null; count: number; issues: string[]; status: HealthStatus },
 ): HealthComponent {
   const issues = [...identity.issues, ...backup.issues];
   return {
     id: "database",
     label: "业务数据库",
-    status: !identity.available ? "critical" : issues.length ? "warning" : "healthy",
+    status: !identity.available ? "critical" : maxStatus(backup.status, issues.length ? "warning" : "healthy"),
     summary: identity.available ? `Schema ${identity.schemaVersion} / 完整性正常` : "业务数据库不可用",
     details: [
       { label: "Schema", value: identity.schemaVersion || "未知" },

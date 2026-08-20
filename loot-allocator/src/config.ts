@@ -13,6 +13,9 @@ export const config = {
   backupsPath: resolve(
     process.env.BACKUPS_PATH || resolve(appRoot, "backups"),
   ),
+  backupHealthPath: process.env.BACKUP_HEALTH_PATH
+    ? resolve(process.env.BACKUP_HEALTH_PATH)
+    : undefined,
   iconCachePath: resolve(
     process.env.ICON_CACHE_PATH || resolve(appRoot, "data", "icon-cache"),
   ),

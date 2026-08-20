@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 17:44 +08:00 — 将 backup-health 接入显式系统健康门禁
+
+- 环境：本地开发 / 隔离测试
+- 执行人：Codex 辅助
+- 变更类型：备份门禁 / 系统健康 / 测试
+- 变更前：系统健康只检查备份目录 mtime
+- 变更后：配置 `BACKUP_HEALTH_PATH` 后，系统健康读取共享 evaluator；warning/blocked/recovery-only 分别反映内容新鲜度，缺失或损坏状态 critical；未配置时保留旧检查兼容性
+- 操作摘要：Windows runtime manifest/wrapper 已传递 `backupHealthPath`；未配置双目标 receipt 时不自动生成该文件，不改变当前生产健康状态
+- 备份/回滚点：未写入真实 backup-health
+- 验证结果：临时干净副本 typecheck、15 个测试文件共 52 个测试和 build 全部通过，覆盖 23 小时门禁系统报告
+- 结果：接入成功，backup-health writer/双目标 adapter 待实现
+- 关联：`loot-allocator/src/system-health.ts`、`loot-allocator/src/config.ts`、`loot-allocator/tests/system-health.test.ts`
+
 ### 2026-08-20 17:40 +08:00 — 增加 ProcessHost Windows 行为测试
 
 - 环境：Windows GitHub CI

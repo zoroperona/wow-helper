@@ -53,6 +53,7 @@ $wowDbDirectory = Split-Path -Parent $WowDbPath
 $simcRunsPath = Join-Path $lootRoot "data\simc-runs"
 $backupsPath = Join-Path $lootRoot "backups"
 $dailyStatusPath = Join-Path $lootRoot "data\runtime\daily-sim-status.json"
+$backupHealthPath = Join-Path $lootRoot "data\runtime\backup-health.json"
 $statusDirectory = Join-Path $lootRoot "data\runtime\task-status"
 
 foreach ($directory in @($ProgramDataRoot, $simcRunsPath, $backupsPath, (Split-Path -Parent $dailyStatusPath), $statusDirectory, $wowDbDirectory)) {
@@ -69,6 +70,7 @@ $paths = [ordered]@{
     simcRunsPath = $simcRunsPath
     backupsPath = $backupsPath
     dailyStatusPath = $dailyStatusPath
+    backupHealthPath = $backupHealthPath
     statusDirectory = $statusDirectory
     pwshExe = $PowerShellExe
     wrapper = $wrapperPath
