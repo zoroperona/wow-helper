@@ -13,7 +13,8 @@ internal sealed class SqliteTableWriter(string databasePath) : IAsyncDisposable
     {
         DataSource = databasePath,
         Mode = SqliteOpenMode.ReadWriteCreate,
-        Cache = SqliteCacheMode.Private
+        Cache = SqliteCacheMode.Private,
+        Pooling = false
     }.ToString());
 
     public async Task InitializeAsync(CancellationToken cancellationToken)

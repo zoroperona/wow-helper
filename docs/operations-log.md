@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 15:34 +08:00 — 修复首轮 CI 的依赖锁和 Windows SQLite 清理失败
+
+- 环境：本地 / GitHub CI 修复
+- 执行人：Codex 辅助
+- 变更类型：CI / 测试 / wow-db
+- 变更前：Node job 的 `npm ci` 因 Vite peer 需要 `esbuild 0.28.x` 而 lockfile 只有 `0.25.12` 失败；Windows `SqliteTableWriterTests` 在连接仍被池持有时删除临时 `wow.sqlite` 目录失败
+- 变更后：将 `esbuild 0.28.2` 作为显式开发依赖并重新生成 lockfile，同时保留 tsx 所需的嵌套 `0.25.12`；写入器禁用 SQLite pooling，测试读取连接作用域化并清理连接池后再删除临时目录
+- 操作摘要：不改变业务运行时依赖用途；使用独立临时 npm cache 和临时完整工作副本完成 clean install、typecheck、测试与 build，未清理或重启当前开发服务
+- 备份/回滚点：修复前 commit `a7414da`；未操作业务 SQLite、wow-db 生产文件或外部资源
+- 验证结果：临时副本 `npm ci --ignore-scripts` 成功安装 135 个包；Pages safety、typecheck、12 个测试文件共 39 个测试和 build 全部通过；本机无 .NET SDK，Windows 测试待 GitHub Actions
+- 结果：本地验证成功；Windows CI 待远程复验
+- 关联：`loot-allocator/package.json`、`loot-allocator/package-lock.json`、`wow-db/src/WowDb.Cli/Services/SqliteTableWriter.cs`、`wow-db/tests/WowDb.Tests/SqliteTableWriterTests.cs`
+
 ### 2026-08-20 14:57 +08:00 — 合并并推送个人 GitHub 仓库历史
 
 - 环境：GitHub / 本地

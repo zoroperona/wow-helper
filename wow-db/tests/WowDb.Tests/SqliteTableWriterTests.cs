@@ -33,18 +33,21 @@ public sealed class SqliteTableWriterTests
                 Assert.IsFalse(await writer.IsCurrentAsync("Map", "12.1.0.69299", "zhCN", "raw-hash", "definitions-hash", CancellationToken.None));
             }
 
-            await using var connection = new SqliteConnection($"Data Source={database}");
-            await connection.OpenAsync();
-            await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT \"Name\", \"Flags\", \"Values\" FROM \"Map\" WHERE \"__id\" = 1";
-            await using var reader = await command.ExecuteReaderAsync();
-            Assert.IsTrue(await reader.ReadAsync());
-            Assert.AreEqual("Azeroth", reader.GetString(0));
-            Assert.AreEqual(7L, reader.GetInt64(1));
-            Assert.AreEqual("[1,2]", reader.GetString(2));
+            await using (var connection = new SqliteConnection($"Data Source={database}"))
+            {
+                await connection.OpenAsync();
+                await using var command = connection.CreateCommand();
+                command.CommandText = "SELECT \"Name\", \"Flags\", \"Values\" FROM \"Map\" WHERE \"__id\" = 1";
+                await using var reader = await command.ExecuteReaderAsync();
+                Assert.IsTrue(await reader.ReadAsync());
+                Assert.AreEqual("Azeroth", reader.GetString(0));
+                Assert.AreEqual(7L, reader.GetInt64(1));
+                Assert.AreEqual("[1,2]", reader.GetString(2));
+            }
         }
         finally
         {
+            SqliteConnection.ClearAllPools();
             Directory.Delete(root, recursive: true);
         }
     }
