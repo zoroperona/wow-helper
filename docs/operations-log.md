@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 14:57 +08:00 — 合并并推送个人 GitHub 仓库历史
+
+- 环境：GitHub / 本地
+- 执行人：Codex 辅助
+- 变更类型：Git / CI
+- 变更前：本地与远端 `main` 没有共同祖先；远端只有 GitHub 创建的初始 README 和通用 `.gitignore`
+- 变更后：以普通 unrelated-history merge 保留远端 `33e3150` 和本地全部历史，合并 commit 为 `940d7f4`，并通过个人 SSH remote 正常推送到 `zoroperona/wow-helper`
+- 操作摘要：手工保留两边 `.gitignore` 全部规则；未 force-push、未删除远端提交；本机 `gh` 当前活动账号是公司账号 `luhong-xd`，因此没有用它访问或修改个人仓库
+- 备份/回滚点：远端推送前 `origin/main=33e3150`；本地 safety commit `012fd1e`
+- 验证结果：SSH push 成功；个人仓库对未认证 API 返回 404，本机公司账号无仓库 API 权限，暂时无法读取 Actions 结果。需要管理员以 `zoroperona` 确认 CI 和账户侧旧 Pages PAT/deploy key 状态
+- 结果：代码推送成功；远程 CI 验收待管理员确认
+- 关联：`https://github.com/zoroperona/wow-helper`、commit `940d7f4`
+
 ### 2026-08-20 14:52 +08:00 — 禁用旧 Pages 仓库直推入口
 
 - 环境：本地
