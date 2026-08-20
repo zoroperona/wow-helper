@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:54 +08:00 — 实现双目标备份的 prepare 阶段
+
+- 环境：本地开发 / 隔离测试数据库
+- 执行人：Codex 辅助
+- 变更类型：备份 / manifest / 测试
+- 变更前：现有备份脚本直接输出单个 SQLite 文件，不生成内容清单，且打开数据库时会触发应用内 migration
+- 变更后：新增独立 `backup:prepare`，直接使用只读 SQLite 连接和 Backup API 生成唯一 bundle，执行 `quick_check`，记录 schema/migration、版本/commit、关键表计数、bytes/SHA-256 和两个预期 target ID，并以 `wx` 写入上传前 `backup-manifest/v1`
+- 操作摘要：prepare manifest 明确不含 repository locator、receipt 或 verified 状态；现有单文件备份尚未替换，双目标上传/读回/receipt adapter 完成前不更新 backup-health
+- 备份/回滚点：仅使用测试数据库；未操作真实主库或备份仓库
+- 验证结果：typecheck、14 个测试文件共 44 个测试和 build 全部通过；测试核对快照 SHA-256、bytes、row count、quick_check 及双 target 门禁
+- 结果：prepare 阶段成功，双目标验证仍待实现
+- 关联：`loot-allocator/scripts/prepare-database-backup.mjs`、`loot-allocator/tests/backup-prepare.test.ts`
+
 ### 2026-08-20 16:51 +08:00 — 实现 business schema 5 外部 migration baseline
 
 - 环境：本地开发 / 隔离数据库副本

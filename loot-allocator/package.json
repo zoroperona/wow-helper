@@ -14,6 +14,7 @@
     "wowdb:import": "node scripts/import-wow-db.mjs",
     "db:migrate:check": "node scripts/migrate-business-database.mjs --check",
     "db:migrate:baseline": "node scripts/migrate-business-database.mjs --baseline",
+    "backup:prepare": "node scripts/prepare-database-backup.mjs",
     "pages:build": "npm run build && node dist/publish-pages.js",
     "pages:preview": "node scripts/serve-pages.mjs",
     "ci:pages-safety": "node scripts/check-pages-safety.mjs",
