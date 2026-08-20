@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:51 +08:00 — 实现 business schema 5 外部 migration baseline
+
+- 环境：本地开发 / 隔离数据库副本
+- 执行人：Codex 辅助
+- 变更类型：migration / CI 测试
+- 变更前：业务 schema 只由应用启动时的内嵌 `migrate()` 管理，没有 migrationId、raw-bytes checksum、attempt 状态或结构指纹
+- 变更后：新增不可修改候选 `0005_baseline.mjs` 和外部 runner；ledger 使用 append-only success、running/success/failed/unknown attempt、前后结构指纹、quick_check 和条件完成更新
+- 操作摘要：分别通过当前业务库的 SQLite Backup API 一致性副本和全新 schema 5 副本执行 baseline/check/幂等重跑；未对真实主库执行 baseline，应用启动路径暂未切换
+- 备份/回滚点：真实业务库未修改；隔离副本位于系统临时目录，由系统临时文件策略清理
+- 验证结果：两个合法 schema 5 指纹均通过；checksum 为 `483f0b29e21f37036b0828c21251440ec4c87a388c7698679bd01c2c6a1020e7`；临时干净副本 typecheck、13 个测试文件共 42 个测试和 build 全部通过
+- 结果：开发验证成功，生产 baseline/cutover 待备份和实机验收
+- 关联：`loot-allocator/migrations/business/0005_baseline.mjs`、`loot-allocator/scripts/migrate-business-database.mjs`、`loot-allocator/tests/business-migration.test.ts`
+
 ### 2026-08-20 16:41 +08:00 — 将 Windows SimC 接入 ProcessHost 契约
 
 - 环境：本地开发 / Windows CI 待验证

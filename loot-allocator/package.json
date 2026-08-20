@@ -12,6 +12,8 @@
     "ops:daily:check": "node scripts/run-daily-pipeline.mjs --check",
     "sim:daily:check": "node scripts/run-daily-pipeline.mjs --check",
     "wowdb:import": "node scripts/import-wow-db.mjs",
+    "db:migrate:check": "node scripts/migrate-business-database.mjs --check",
+    "db:migrate:baseline": "node scripts/migrate-business-database.mjs --baseline",
     "pages:build": "npm run build && node dist/publish-pages.js",
     "pages:preview": "node scripts/serve-pages.mjs",
     "ci:pages-safety": "node scripts/check-pages-safety.mjs",
