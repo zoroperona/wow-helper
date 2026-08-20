@@ -28,7 +28,7 @@
 
 ## 日志
 
-### 2026-08-20 — 修复 Windows GameTable 测试的 SQLite 句柄释放
+### 2026-08-20 15:52 +08:00 — 修复 Windows GameTable 测试的 SQLite 句柄释放
 
 - 环境：本地 / GitHub Actions Windows runner 待验证
 - 执行人：Codex 辅助
