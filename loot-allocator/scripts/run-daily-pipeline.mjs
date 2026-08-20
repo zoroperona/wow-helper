@@ -61,7 +61,8 @@ try {
   await rm(lockPath, { recursive: true, force: true });
 }
 
-if (failed || simulation.failed > 0) process.exitCode = 1;
+if (failed) process.exitCode = 1;
+else if (simulation.failed > 0) process.exitCode = 10;
 
 function stage(id, label) {
   return { id, label, status: "pending", startedAt: null, finishedAt: null, error: null };

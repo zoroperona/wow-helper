@@ -45,6 +45,8 @@ function Invoke-Task {
         $env:BACKUPS_PATH = [string]$manifest.paths.backupsPath
         $env:DAILY_TASK_STATUS_PATH = [string]$manifest.paths.dailyStatusPath
         $env:WOWHELPER_RUNTIME_MANIFEST = $ManifestPath
+        $env:WOWHELPER_PROCESS_HOST_PATH = [string]$manifest.paths.processHostExe
+        $env:WOWHELPER_PROCESS_STATE_DIRECTORY = [string]$manifest.paths.statusDirectory
         if ($manifest.paths.handleExe) {
             $env:WOWHELPER_HANDLE_PATH = [string]$manifest.paths.handleExe
         }
@@ -70,7 +72,7 @@ function Read-Manifest([string] $Path) {
     if ($value.schemaVersion -ne 1) {
         throw "不支持的 runtime manifest schema：$($value.schemaVersion)"
     }
-    foreach ($name in @("repoRoot", "nodeExe", "databasePath", "wowDbPath", "simcExe", "simcRunsPath", "backupsPath", "dailyStatusPath", "statusDirectory")) {
+    foreach ($name in @("repoRoot", "nodeExe", "databasePath", "wowDbPath", "simcExe", "processHostExe", "simcRunsPath", "backupsPath", "dailyStatusPath", "statusDirectory")) {
         if ([string]::IsNullOrWhiteSpace([string]$value.paths.$name)) {
             throw "runtime manifest 缺少绝对路径：paths.$name"
         }

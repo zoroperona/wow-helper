@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { CharacterStatSnapshot, MainStat, StatWeights } from "./types.js";
 import { normalizeWeights } from "./dpswow.js";
 
@@ -324,7 +325,59 @@ function findActiveTalents(specializations: JsonRecord, specId: number): string 
   return "";
 }
 
+export function buildProcessHostArguments(input: {
+  mutexName: string;
+  statePath: string;
+  workingDirectory: string;
+  timeoutMs: number;
+  command: string;
+  commandArguments: string[];
+}): string[] {
+  return [
+    "--mutex", input.mutexName,
+    "--state", input.statePath,
+    "--working-directory", input.workingDirectory,
+    "--timeout-seconds", String(Math.max(1, Math.ceil(input.timeoutMs / 1000))),
+    "--", input.command,
+    ...input.commandArguments,
+  ];
+}
+
 function runProcess(command: string, args: string[], timeoutMs: number): Promise<{code: number; stdout: string; stderr: string}> {
+  if (process.platform === "win32") {
+    const processHost = process.env.WOWHELPER_PROCESS_HOST_PATH;
+    const stateDirectory = process.env.WOWHELPER_PROCESS_STATE_DIRECTORY;
+    if (!processHost || !stateDirectory) {
+      return Promise.reject(new Error("Windows SimC 必须通过 runtime manifest 配置 WowHelper.ProcessHost"));
+    }
+    const statePath = join(stateDirectory, `simc-${process.pid}-${randomUUID()}.json`);
+    return spawnAndCollect(processHost, buildProcessHostArguments({
+      mutexName: "simc",
+      statePath,
+      workingDirectory: dirname(command),
+      timeoutMs,
+      command,
+      commandArguments: args,
+    }));
+  }
+  return runPosixProcess(command, args, timeoutMs);
+}
+
+function spawnAndCollect(command: string, args: string[]): Promise<{code: number; stdout: string; stderr: string}> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { shell: false, stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.on("data", (chunk: string) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code: code ?? -1, stdout, stderr }));
+  });
+}
+
+function runPosixProcess(command: string, args: string[], timeoutMs: number): Promise<{code: number; stdout: string; stderr: string}> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { shell: false, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";

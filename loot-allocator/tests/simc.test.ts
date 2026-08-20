@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildSimcArtifactName,
+  buildProcessHostArguments,
   buildCharacterStatsProfile,
   buildSimcProfile,
   formatLocalDate,
@@ -161,5 +162,23 @@ describe("local SimulationCraft profile", () => {
       realmName: "凤凰之神/测试",
       simulatedAt,
     })).toBe("小黄油丶-凤凰之神-测试-2026-08-18-04-05-06");
+  });
+
+  it("builds a fenced Windows ProcessHost invocation without shell quoting", () => {
+    expect(buildProcessHostArguments({
+      mutexName: "simc",
+      statePath: "D:\\WowHelper\\state\\simc.json",
+      workingDirectory: "D:\\WowHelper\\simc",
+      timeoutMs: 30_001,
+      command: "D:\\WowHelper\\simc\\simc.exe",
+      commandArguments: ["profile with spaces.simc", "threads=1"],
+    })).toEqual([
+      "--mutex", "simc",
+      "--state", "D:\\WowHelper\\state\\simc.json",
+      "--working-directory", "D:\\WowHelper\\simc",
+      "--timeout-seconds", "31",
+      "--", "D:\\WowHelper\\simc\\simc.exe",
+      "profile with spaces.simc", "threads=1",
+    ]);
   });
 });

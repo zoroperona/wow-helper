@@ -16,6 +16,7 @@ pwsh.exe -NoProfile -File .\ops\windows\Install-WowHelperRuntime.ps1 `
   -NodeExe 'C:\Program Files\nodejs\node.exe' `
   -SimcExe D:\WowHelper\runtime\simc\simc.exe `
   -WowDbPath D:\WowHelper\wow-db\output\wow.sqlite `
+  -ProcessHostExe D:\WowHelper\runtime\ProcessHost\WowHelper.ProcessHost.exe `
   -HandleExe D:\WowHelper\runtime\Sysinternals\handle64.exe
 ```
 
@@ -28,7 +29,7 @@ runtime manifest 最小结构如下，所有路径必须是 Windows 绝对路径
   "schemaVersion": 1,
   "runAs": "WOWHELPER-RUNTIME\wowhelper-runtime",
   "paths": {
-    "repoRoot": "D:\\WowHelper",
+    "repoRoot": "D:\\WowHelper\\loot-allocator",
     "nodeExe": "C:\\Program Files\\nodejs\\node.exe",
     "databasePath": "D:\\WowHelper\\loot-allocator\\data\\loot-allocator.sqlite",
     "wowDbPath": "D:\\WowHelper\\wow-db\\output\\wow.sqlite",
@@ -37,7 +38,8 @@ runtime manifest 最小结构如下，所有路径必须是 Windows 绝对路径
     "backupsPath": "D:\\WowHelper\\loot-allocator\\backups",
     "dailyStatusPath": "D:\\WowHelper\\loot-allocator\\data\\runtime\\daily-sim-status.json",
     "statusDirectory": "D:\\WowHelper\\loot-allocator\\data\\runtime\\task-status",
-    "handleExe": "D:\\WowHelper\\runtime\\Sysinternals\\handle64.exe"
+    "handleExe": "D:\\WowHelper\\runtime\\Sysinternals\\handle64.exe",
+    "processHostExe": "D:\\WowHelper\\runtime\\ProcessHost\\WowHelper.ProcessHost.exe"
   },
   "hashes": {
     "nodeExe": "<64 lowercase hex SHA-256>"

@@ -16,6 +16,10 @@ param(
     [ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })]
     [string] $WowDbPath,
 
+    [Parameter(Mandatory = $true)]
+    [ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })]
+    [string] $ProcessHostExe,
+
     [string] $HandleExe,
     [string] $PowerShellExe = "pwsh.exe",
     [string] $RuntimeUser = "WOWHELPER-RUNTIME\wowhelper-runtime",
@@ -30,6 +34,7 @@ $RepoRoot = [System.IO.Path]::GetFullPath($RepoRoot)
 $NodeExe = [System.IO.Path]::GetFullPath($NodeExe)
 $SimcExe = [System.IO.Path]::GetFullPath($SimcExe)
 $WowDbPath = [System.IO.Path]::GetFullPath($WowDbPath)
+$ProcessHostExe = [System.IO.Path]::GetFullPath($ProcessHostExe)
 $ProgramDataRoot = [System.IO.Path]::GetFullPath($ProgramDataRoot)
 $PowerShellCommand = Get-Command $PowerShellExe -ErrorAction Stop
 $PowerShellExe = [System.IO.Path]::GetFullPath($PowerShellCommand.Source)
@@ -56,7 +61,7 @@ foreach ($directory in @($ProgramDataRoot, $simcRunsPath, $backupsPath, (Split-P
 }
 
 $paths = [ordered]@{
-    repoRoot = $RepoRoot
+    repoRoot = $lootRoot
     nodeExe = $NodeExe
     databasePath = $databasePath
     wowDbPath = $WowDbPath
@@ -68,6 +73,7 @@ $paths = [ordered]@{
     pwshExe = $PowerShellExe
     wrapper = $wrapperPath
     taskDefinitions = $definitionsPath
+    processHostExe = $ProcessHostExe
 }
 if (-not [string]::IsNullOrWhiteSpace($HandleExe)) {
     $HandleExe = [System.IO.Path]::GetFullPath($HandleExe)
@@ -81,6 +87,7 @@ $hashes = [ordered]@{
     pwshExe = (Get-FileHash -LiteralPath $PowerShellExe -Algorithm SHA256).Hash.ToLowerInvariant()
     wrapper = (Get-FileHash -LiteralPath $wrapperPath -Algorithm SHA256).Hash.ToLowerInvariant()
     taskDefinitions = (Get-FileHash -LiteralPath $definitionsPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    processHostExe = (Get-FileHash -LiteralPath $ProcessHostExe -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 if ($paths.handleExe) {
     $hashes.handleExe = (Get-FileHash -LiteralPath $paths.handleExe -Algorithm SHA256).Hash.ToLowerInvariant()

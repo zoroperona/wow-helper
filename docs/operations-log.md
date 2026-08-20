@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:41 +08:00 — 将 Windows SimC 接入 ProcessHost 契约
+
+- 环境：本地开发 / Windows CI 待验证
+- 执行人：Codex 辅助
+- 变更类型：Windows runtime / SimC / 进程控制
+- 变更前：ProcessHost 尚未进入 runtime manifest，Windows SimC 仍会走 Node 直接 `spawn/child.kill`
+- 变更后：安装器固定 ProcessHost exe 路径/hash，wrapper 注入 ProcessHost 和状态目录；Windows SimC 缺少这些配置时 fail closed，有配置时通过全局 `simc` mutex、固定 timeout 和无 shell 参数数组调用 helper
+- 操作摘要：macOS/Linux 开发路径保持不变；每日任务成员级部分失败退出码改为 `10`
+- 备份/回滚点：未运行 SimC、未修改业务 SQLite；可回滚至提交 `608de01`
+- 验证结果：临时干净副本 `npm ci` 成功，Pages safety、typecheck、12 个测试文件共 40 个测试和 build 全部通过；C# 编译与 Windows 行为待 CI
+- 结果：待 Windows CI 与实机验收
+- 关联：`loot-allocator/src/simc.ts`、`loot-allocator/tests/simc.test.ts`、`ops/windows/Install-WowHelperRuntime.ps1`
+
 ### 2026-08-20 16:36 +08:00 — 新增 WowHelper.ProcessHost 基础实现
 
 - 环境：本地开发 / Windows CI 待验证
