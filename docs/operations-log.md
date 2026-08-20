@@ -41,6 +41,19 @@
 - 结果：待 Windows runtime 验收
 - 关联：`ops/windows/Invoke-WowHelperTask.ps1`、`ops/windows/README.md`、`loot-allocator/scripts/run-daily-pipeline.mjs`、`loot-allocator/scripts/import-wow-db.mjs`
 
+### 2026-08-20 16:18 +08:00 — 将 Windows wrapper 语法纳入 CI
+
+- 环境：本地 / GitHub CI 配置
+- 执行人：Codex 辅助
+- 变更类型：CI / Windows runtime
+- 变更前：Windows wrapper 只有本地静态文件，CI 未验证 PowerShell 语法
+- 变更后：现有 Windows job 在 .NET 测试前解析 `ops/windows/Invoke-WowHelperTask.ps1`，语法错误直接失败
+- 操作摘要：复用固定 SHA 的 checkout，不新增权限、云资源或运行凭证
+- 备份/回滚点：可回滚至提交 `38370e8`
+- 验证结果：本地 `git diff --check`；实际 PowerShell 解析由 Windows runner 执行
+- 结果：待 CI 验证
+- 关联：`.github/workflows/ci.yml`
+
 ### 2026-08-20 15:52 +08:00 — 修复 Windows GameTable 测试的 SQLite 句柄释放
 
 - 环境：本地 / GitHub Actions Windows runner 待验证
