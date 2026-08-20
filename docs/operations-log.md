@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 14:42 +08:00 — 本地协议合同与现有代码回归验证
+
+- 环境：本地
+- 执行人：Codex 辅助
+- 变更类型：测试 / 文档验证
+- 变更前：D1 export 与 lease 时间合同已写入计划和 runbook，但尚未在 staging 执行远程验收
+- 变更后：本地 plan/runbook 交叉检查确认普通 lease 120 秒、heartbeat 30 秒、export budget 600 秒、maintenance hard deadline 900 秒；现有 Node 项目回归测试和类型检查通过
+- 操作摘要：运行 `npm test` 和 `npm run typecheck`；未创建 Cloudflare/Pages 资源，未调用远程 API，未启用公网申请
+- 备份/回滚点：不适用，未操作业务数据
+- 验证结果：11 个测试文件、37 个测试全部通过；TypeScript 类型检查通过；staging D1 export polling、Time Travel、quarantine import 和 token hard guard 尚未执行
+- 结果：成功（本地验证）；staging 验收待资源创建
+- 关联：`docs/local-first-github-pages-simulation-plan.md`、`docs/operations-runbook.md`
+
 ### 2026-08-20 14:45 +08:00 — 建立本地 Git 初始审计基线
 
 - 环境：本地
