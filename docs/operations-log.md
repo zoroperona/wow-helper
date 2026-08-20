@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:28 +08:00 — 增加 Windows runtime 安装器与任务定义
+
+- 环境：本地开发 / Windows runner 待验证
+- 执行人：Codex 辅助
+- 变更类型：Windows runtime / Task Scheduler / CI
+- 变更前：只有手写 wrapper 和 manifest 示例，没有生成 manifest、ACL、任务注册和 XML 交接包的仓库入口
+- 变更后：新增 `Install-WowHelperRuntime.ps1` 和 `task-definitions.json`；安装器生成绝对路径/hash manifest、设置运行账号与 Administrators ACL、注册 03:15/15:15 备份、04:00 每日和开机校验任务，并导出任务 XML
+- 操作摘要：扩展 Windows CI PowerShell 语法门禁，安装器默认要求管理员交互会话和 `wowhelper-runtime` 凭据；`-SkipTaskRegistration` 可只生成 manifest
+- 备份/回滚点：未执行安装器；未触碰业务 SQLite、wow-db 或 Windows 任务
+- 验证结果：本机无 PowerShell，仅完成静态 diff 检查；Windows runner 需验证 parser、ACL、任务注册和 XML 导出
+- 结果：待 Windows 验收
+- 关联：`ops/windows/Install-WowHelperRuntime.ps1`、`ops/windows/task-definitions.json`、`.github/workflows/ci.yml`
+
 ### 2026-08-20 16:14 +08:00 — 开始 Windows runtime foundation
 
 - 环境：本地开发

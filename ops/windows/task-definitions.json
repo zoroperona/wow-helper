@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "name": "WowHelper-Backup-0315",
+      "task": "backup",
+      "trigger": "daily",
+      "at": "03:15"
+    },
+    {
+      "name": "WowHelper-Backup-1515",
+      "task": "backup",
+      "trigger": "daily",
+      "at": "15:15"
+    },
+    {
+      "name": "WowHelper-Daily-0400",
+      "task": "daily",
+      "trigger": "daily",
+      "at": "04:00"
+    },
+    {
+      "name": "WowHelper-Validate-AtStartup",
+      "task": "validate",
+      "trigger": "startup"
+    }
+  ]
+}

@@ -6,6 +6,21 @@
 pwsh.exe -NoProfile -NonInteractive -File <repo>\ops\windows\Invoke-WowHelperTask.ps1 -Task <daily|daily-check|backup|validate>
 ```
 
+管理员安装入口为 `Install-WowHelperRuntime.ps1`。它读取 `task-definitions.json`，生成 runtime manifest、设置仅运行账号和 Administrators 可读的 ACL，并注册 03:15/15:15 备份、04:00 每日任务和开机校验任务。首次安装可使用 `-SkipTaskRegistration` 只生成 manifest，避免在未完成人工核对前注册任务。
+
+示例：
+
+```powershell
+pwsh.exe -NoProfile -File .\ops\windows\Install-WowHelperRuntime.ps1 `
+  -RepoRoot D:\WowHelper `
+  -NodeExe 'C:\Program Files\nodejs\node.exe' `
+  -SimcExe D:\WowHelper\runtime\simc\simc.exe `
+  -WowDbPath D:\WowHelper\wow-db\output\wow.sqlite `
+  -HandleExe D:\WowHelper\runtime\Sysinternals\handle64.exe
+```
+
+安装前必须确认 `wowhelper-runtime` 已创建为本地标准用户，且密码只在交互式 credential prompt 中输入。安装器不会创建管理员用户、不会把密码写入 manifest，也不会自动恢复 Armory profile。
+
 runtime manifest 最小结构如下，所有路径必须是 Windows 绝对路径，`hashes` 的属性名必须对应 `paths` 中的路径名：
 
 ```json
