@@ -6,10 +6,10 @@ import {
 import { constants as fsConstants, createReadStream } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
-const projectRoot = new URL("../", import.meta.url).pathname;
+const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const defaultTarget = resolve(projectRoot, "../wow-db/output/wow.sqlite");
 const criticalTables = [
   "__wowdb_tables", "JournalInstance", "JournalEncounter", "JournalEncounterItem",
@@ -49,9 +49,30 @@ try {
 
 async function extractZip(path) {
   temporary = await mkdtemp(join(tmpdir(), "wow-db-import-"));
-  const result = spawnSync("/usr/bin/ditto", ["-x", "-k", path, temporary], { encoding: "utf8" });
+  const result = extractZipWithPlatformTool(path, temporary);
   if (result.status !== 0) throw new Error(result.stderr.trim() || "无法解压交接包");
   return temporary;
+}
+
+function extractZipWithPlatformTool(path, destination) {
+  if (process.platform === "win32") {
+    const powershell = process.env.WOWHELPER_PWSH_PATH || "pwsh.exe";
+    const env = {
+      ...process.env,
+      WOWHELPER_ZIP_PATH: path,
+      WOWHELPER_ZIP_DESTINATION: destination,
+    };
+    return spawnSync(powershell, [
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      "$ErrorActionPreference = 'Stop'; Expand-Archive -LiteralPath $env:WOWHELPER_ZIP_PATH -DestinationPath $env:WOWHELPER_ZIP_DESTINATION -Force",
+    ], { encoding: "utf8", env });
+  }
+  if (process.platform === "darwin") {
+    return spawnSync("ditto", ["-x", "-k", path, destination], { encoding: "utf8" });
+  }
+  return spawnSync("unzip", ["-q", path, "-d", destination], { encoding: "utf8" });
 }
 
 async function validatePackage(root, targetPath, allowDowngrade) {
@@ -149,9 +170,20 @@ function inspectDatabase(path) {
 }
 
 function assertTargetNotOpen(path) {
-  if (!spawnSync("/usr/bin/which", ["lsof"], { stdio: "ignore" }).status) {
-    const result = spawnSync("lsof", ["-t", "--", path], { encoding: "utf8" });
-    if (result.stdout.trim()) throw new Error(`目标数据库仍被进程 ${result.stdout.trim().split(/\s+/).join("、")} 占用，请先停止本地应用`);
+  if (process.platform === "win32") {
+    const handlePath = process.env.WOWHELPER_HANDLE_PATH;
+    if (!handlePath) {
+      throw new Error("Windows 导入必须由 runtime wrapper 提供 WOWHELPER_HANDLE_PATH，并先完成文件占用检查");
+    }
+    const result = spawnSync(handlePath, ["-accepteula", "-nobanner", path], { encoding: "utf8" });
+    if (result.status === 0 && result.stdout.trim()) {
+      throw new Error(`目标数据库仍被进程占用，请先停止本地应用：${result.stdout.trim()}`);
+    }
+    return;
+  }
+  const result = spawnSync("lsof", ["-t", "--", path], { encoding: "utf8" });
+  if (result.status === 0 && result.stdout.trim()) {
+    throw new Error(`目标数据库仍被进程 ${result.stdout.trim().split(/\s+/).join("、")} 占用，请先停止本地应用`);
   }
 }
 

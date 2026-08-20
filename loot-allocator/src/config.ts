@@ -10,7 +10,9 @@ export const config = {
     process.env.LOOT_ALLOCATOR_DB || resolve(appRoot, "data", "loot-allocator.sqlite"),
   ),
   publicPath: resolve(appRoot, "public"),
-  backupsPath: resolve(appRoot, "backups"),
+  backupsPath: resolve(
+    process.env.BACKUPS_PATH || resolve(appRoot, "backups"),
+  ),
   iconCachePath: resolve(
     process.env.ICON_CACHE_PATH || resolve(appRoot, "data", "icon-cache"),
   ),

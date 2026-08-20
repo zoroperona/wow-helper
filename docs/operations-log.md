@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:14 +08:00 — 开始 Windows runtime foundation
+
+- 环境：本地开发
+- 执行人：Codex 辅助
+- 变更类型：Windows runtime / 配置 / wow-db 导入
+- 变更前：每日任务使用 `/usr/local/bin/npm` 和 Unix PATH；wow-db 导入使用 macOS `ditto`、`/usr/bin/which`，Windows 路径解析使用 URL pathname
+- 变更后：每日任务使用 `fileURLToPath`、当前平台 npm 命令和 Windows `tasklist.exe`；wow-db zip 按平台选择 PowerShell `Expand-Archive`/`ditto`/`unzip`，Windows 导入无 runtime wrapper 句柄检查时 fail closed；配置支持 `BACKUPS_PATH`
+- 操作摘要：新增 `ops/windows/Invoke-WowHelperTask.ps1` 和 runtime manifest 说明；wrapper 校验运行账号、绝对路径、SHA-256，并写原子任务状态 JSON
+- 备份/回滚点：不适用；未触碰业务 SQLite、wow-db 或运行产物
+- 验证结果：Node 脚本语法检查通过；`npm run ci:pages-safety` 通过；PowerShell 仅完成静态实现，本机无 `pwsh`，Windows runner 需补充验证
+- 结果：待 Windows runtime 验收
+- 关联：`ops/windows/Invoke-WowHelperTask.ps1`、`ops/windows/README.md`、`loot-allocator/scripts/run-daily-pipeline.mjs`、`loot-allocator/scripts/import-wow-db.mjs`
+
 ### 2026-08-20 15:52 +08:00 — 修复 Windows GameTable 测试的 SQLite 句柄释放
 
 - 环境：本地 / GitHub Actions Windows runner 待验证

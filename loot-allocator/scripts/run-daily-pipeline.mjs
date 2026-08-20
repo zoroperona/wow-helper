@@ -1,9 +1,10 @@
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { dirname, join } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const projectRoot = new URL("../", import.meta.url).pathname;
+const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const runtimePath = join(projectRoot, "data", "runtime");
 const lockPath = join(runtimePath, "daily-task.lock");
 const statusPath = process.env.DAILY_TASK_STATUS_PATH || join(runtimePath, "daily-sim-status.json");
@@ -12,8 +13,9 @@ const checkOnly = process.argv.includes("--check");
 const startedAt = new Date().toISOString();
 const taskEnvironment = {
   ...process.env,
-  PATH: [dirname(process.execPath), "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"].join(":"),
+  PATH: [dirname(process.execPath), process.env.PATH].filter(Boolean).join(process.platform === "win32" ? ";" : ":"),
 };
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const stages = [
   stage("build", "构建应用"),
   stage("validate", "校验依赖"),
@@ -26,7 +28,7 @@ let failed = false;
 await acquireLock();
 try {
   await persist("running", "starting");
-  await runStage("build", "/usr/local/bin/npm", ["run", "build"]);
+  await runStage("build", npmCommand, ["run", "build"]);
   await runStage("validate", process.execPath, ["scripts/validate-runtime.mjs"]);
 
   if (checkOnly) {
@@ -118,6 +120,10 @@ async function readLockOwner() {
 }
 
 function processIsRunning(pid) {
+  if (process.platform === "win32") {
+    const result = spawnSync("tasklist.exe", ["/FI", `PID eq ${Number(pid)}`, "/NH"], { encoding: "utf8" });
+    return result.status === 0 && new RegExp(`\\b${Number(pid)}\\b`).test(result.stdout || "");
+  }
   try { process.kill(Number(pid), 0); return true; } catch { return false; }
 }
 
