@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 17:40 +08:00 — 增加 ProcessHost Windows 行为测试
+
+- 环境：Windows GitHub CI
+- 执行人：Codex 辅助
+- 变更类型：Windows runtime / 测试
+- 变更前：CI 只覆盖 ProcessHost 参数解析，未验证 Windows kernel mutex 和 Job Object 实际行为
+- 变更后：新增跨线程 named mutex 互斥测试，以及长运行 `cmd.exe` 被 Job Object 终止的测试
+- 操作摘要：测试使用随机对象名和短生命周期进程，不接触业务库、不修改 Task Scheduler
+- 备份/回滚点：不适用
+- 验证结果：本机无法运行 Windows .NET；已提交给 Windows CI 验证
+- 结果：待 CI 验证
+- 关联：`runtime/tests/WowHelper.ProcessHost.Tests/WindowsProcessControlTests.cs`
+
 ### 2026-08-20 16:57 +08:00 — 实现 backup-health 时间门禁核心
 
 - 环境：本地开发
