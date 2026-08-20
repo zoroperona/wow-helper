@@ -56,9 +56,9 @@ API; GitHub Pages is not a production data source.
 
 The production-safe runner is `scripts/run-daily-pipeline.mjs`. It performs the
 build, dependency validation, business-database backup, DPSWOW-backed daily
-simulation, and result status persistence. It does not call `publish-pages` or
-`deploy-pages`. Merging official-armory equipment with cached DPSWOW talent data
-is a separate cloud-readiness change that is not implemented yet.
+simulation, and result status persistence. It does not publish a remote static
+site. Merging official-armory equipment with cached DPSWOW talent data is a
+separate local-first implementation change that is not implemented yet.
 
 This repository does not install or require a local scheduler. Production
 scheduling belongs to the remote deployment environment (for example Alibaba
@@ -98,11 +98,11 @@ SQLite integrity, required tables, locale, and build monotonicity. It refuses to
 replace a database that is open or has an unmerged WAL. The previous database is
 retained under `../wow-db/output/archive/`; restart the application after import.
 
-## Local static snapshot compatibility
+## Local static snapshot preview
 
-The repository still contains the static snapshot publisher for local preview and
-backward compatibility. It is not part of the Alibaba Cloud production flow and
-must not be configured with a Pages repository or production credentials.
+The repository keeps a static snapshot builder for local inspection only. Remote
+publication is disabled until the signed Draft Release ingress and pinned GitHub
+Actions Pages workflow described in the implementation plan are complete.
 
 Build and preview it locally:
 
@@ -114,24 +114,10 @@ npm run pages:preview
 The preview is available at `http://127.0.0.1:5080`. Generated files are placed
 in `pages-dist/` and are intentionally ignored by this source workspace.
 
-If a local or historical export is intentionally needed, set both guards explicitly
-before publishing. This is not a production deployment path:
-
-```bash
-export PAGES_GITHUB_OWNER="your-dedicated-account"
-export PAGES_REPO_URL="git@your-personal-github:your-dedicated-account/your-dedicated-account.github.io.git"
-npm run pages:publish
-```
-
-`PAGES_GITHUB_OWNER` must match the repository owner or deployment is refused.
-The SSH host alias in `PAGES_REPO_URL` should point to a dedicated personal SSH
-key, keeping publication credentials separate from any company GitHub login.
-Configure GitHub Pages to deploy the `main` branch from the repository root.
-Use `PAGES_BRANCH` only when a different branch is intentionally configured.
-
-The current local-first plan runs the daily pipeline on the administrator's machine. Any historical cloud/systemd reference is not an active deployment requirement.
-or `deploy-pages`; those stages are not part of production. The existing remote
-publication commands remain only for an intentional local or historical export.
+No command in this workspace may push generated Pages content directly to a Git
+repository. The current local-first plan runs the daily pipeline on the
+administrator's machine. Historical cloud/systemd references are not active
+deployment requirements.
 
 ## Current scope
 

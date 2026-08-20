@@ -14,7 +14,7 @@
     "wowdb:import": "node scripts/import-wow-db.mjs",
     "pages:build": "npm run build && node dist/publish-pages.js",
     "pages:preview": "node scripts/serve-pages.mjs",
-    "pages:publish": "npm run pages:build && node scripts/deploy-pages.mjs",
+    "ci:pages-safety": "node scripts/check-pages-safety.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "verify:ui": "node scripts/verify-ui.mjs",

@@ -21,14 +21,6 @@ const state = {
     succeeded: 0,
     failed: 0,
   },
-  publication: {
-    configured: false,
-    running: false,
-    startedAt: null,
-    finishedAt: null,
-    lastSucceededAt: null,
-    error: null,
-  },
   health: null,
   rosterSort: { key: "role", direction: "default" },
   currentView: "allocation",
@@ -107,7 +99,6 @@ const elements = {
   simulateStaleButton: document.querySelector("#simulateStaleButton"),
   simulationActivity: document.querySelector("#simulationActivity"),
   simulationActivityText: document.querySelector("#simulationActivityText"),
-  publishButton: document.querySelector("#publishButton"),
   healthNavButton: document.querySelector("#healthNavButton"),
   healthNavDot: document.querySelector("#healthNavDot"),
   healthOverview: document.querySelector("#healthOverview"),
@@ -278,18 +269,6 @@ elements.refreshHealthButton.addEventListener("click", async () => {
     showToast(error.message, true);
   } finally {
     setBusy(elements.refreshHealthButton, false);
-  }
-});
-
-elements.publishButton.addEventListener("click", async () => {
-  setBusy(elements.publishButton, true);
-  try {
-    state.publication = await api("/api/publication", { method: "POST" });
-    renderPublicationState();
-    showToast("公开页已开始发布");
-  } catch (error) {
-    showToast(error.message, true);
-    await loadPublicationStatus();
   }
 });
 
@@ -649,33 +628,6 @@ async function loadSimulationStatus(announceCompletion = false) {
   } finally {
     simulationPollInFlight = false;
   }
-}
-
-let publicationPollInFlight = false;
-async function loadPublicationStatus(announceCompletion = false) {
-  if (publicationPollInFlight) return;
-  publicationPollInFlight = true;
-  const previous = state.publication;
-  try {
-    state.publication = await api("/api/publication/status");
-    renderPublicationState();
-    if (announceCompletion && previous.running && !state.publication.running) {
-      showToast(state.publication.error ? `公开页发布失败：${state.publication.error}` : "公开页发布完成", Boolean(state.publication.error));
-    }
-  } catch (error) {
-    console.error("Publication status refresh failed", error);
-  } finally {
-    publicationPollInFlight = false;
-  }
-}
-
-function renderPublicationState() {
-  const status = state.publication;
-  elements.publishButton.disabled = !status.configured || status.running;
-  elements.publishButton.textContent = status.running ? "发布中" : "发布公开页";
-  elements.publishButton.title = status.configured
-    ? (status.lastSucceededAt ? `上次发布：${formatDate(status.lastSucceededAt)}` : "发布最新只读快照")
-    : "需要配置专用个人 GitHub 仓库";
 }
 
 async function loadWorkspace(force = false) {
@@ -1726,7 +1678,6 @@ function escapeHtml(value) {
 
 const initialView = window.location.hash.slice(1);
 switchView(initialView || "allocation");
-await Promise.all([loadState(), loadWorkspace(), loadRealms(), loadPublicationStatus(), loadSystemHealth()]);
+await Promise.all([loadState(), loadWorkspace(), loadRealms(), loadSystemHealth()]);
 await loadSimulationStatus();
 window.setInterval(() => void loadSimulationStatus(true), 2000);
-window.setInterval(() => void loadPublicationStatus(true), 3000);

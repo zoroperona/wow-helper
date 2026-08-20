@@ -5,7 +5,6 @@ import { DpsWowClient } from "./dpswow.js";
 import { WowDbCatalog } from "./wowdb.js";
 import { BlizzardArmoryClient } from "./armory.js";
 import { SimulationService } from "./simulation.js";
-import { PublicationService } from "./publication-service.js";
 import { SystemHealthService } from "./system-health.js";
 import { appRoot } from "./config.js";
 
@@ -27,7 +26,6 @@ const app = createApp({
   backupsPath: config.backupsPath,
   iconCachePath: config.iconCachePath,
   simulations,
-  publication: new PublicationService(),
   health: new SystemHealthService({
     simcPath: config.simcPath,
     simcRunsPath: config.simcRunsPath,

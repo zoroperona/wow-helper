@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 14:52 +08:00 — 禁用旧 Pages 仓库直推入口
+
+- 环境：本地
+- 执行人：Codex 辅助
+- 变更类型：应用安全 / CI / 文档
+- 变更前：`pages:publish` 可调用 `deploy-pages.mjs` clone、清空并 push 独立 Pages 仓库；本机 UI/API 还能异步触发该路径，仓库没有 CI denylist
+- 变更后：删除旧 npm 命令、直推脚本、后端异步发布服务/API和前端发布按钮；只保留本地静态构建/预览；新增仓库 denylist、Vitest 回归测试和固定 action commit SHA/最小权限的 GitHub Actions CI
+- 操作摘要：将 plan 标记为协议冻结、阶段 2 实施中；扫描源码、脚本、前端和 workflow，禁止旧凭证名、旧入口、直推路径、浮动 Action 与 `pull_request_target`
+- 备份/回滚点：实施前 commit `f10bc54`；未操作业务数据库或外部 Pages/Cloudflare 资源
+- 验证结果：`npm run ci:pages-safety`、`npm run typecheck`、12 个测试文件共 39 个测试、`npm run build` 全部通过；旧 Pages 环境变量均未设置；本机未安装 `dotnet`，wow-db 验证留给 Windows GitHub Actions；GitHub 账户侧旧 Pages PAT/deploy key 是否存在仍需管理员确认并在存在时撤销
+- 结果：本地代码验收成功；账户侧凭证确认待完成
+- 关联：`.github/workflows/ci.yml`、`loot-allocator/scripts/check-pages-safety.mjs`、`docs/local-first-github-pages-simulation-plan.md`
+
 ### 2026-08-20 14:42 +08:00 — 本地协议合同与现有代码回归验证
 
 - 环境：本地

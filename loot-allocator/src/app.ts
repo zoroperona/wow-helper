@@ -10,7 +10,6 @@ import { ArmoryLoginRequiredError, BlizzardArmoryClient } from "./armory.js";
 import type { SimulationService } from "./simulation.js";
 import { localizeSimulationReport } from "./simulation-report.js";
 import { IconCache } from "./icon-cache.js";
-import type { PublicationService } from "./publication-service.js";
 import type { SystemHealthService } from "./system-health.js";
 import { runLocalCharacterStats } from "./simc.js";
 
@@ -66,7 +65,6 @@ export function createApp(options: {
   backupsPath: string;
   iconCachePath: string;
   simulations: SimulationService;
-  publication: PublicationService;
   health: SystemHealthService;
   simcPath: string;
 }) {
@@ -100,10 +98,6 @@ export function createApp(options: {
     response.json({ data: options.simulations.getStatus() });
   });
 
-  app.get("/api/publication/status", (_request, response) => {
-    response.json({ data: options.publication.getStatus() });
-  });
-
   app.get(
     "/api/system/health",
     asyncRoute(async (request, response) => {
@@ -111,10 +105,6 @@ export function createApp(options: {
       response.json({ data: await options.health.getReport(force) });
     }),
   );
-
-  app.post("/api/publication", (_request, response) => {
-    response.status(202).json({ data: options.publication.start() });
-  });
 
   app.post("/api/simulations/stale", (_request, response) => {
     response.status(202).json({ data: options.simulations.startStale() });
