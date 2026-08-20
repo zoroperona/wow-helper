@@ -24,11 +24,15 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Invoke-Installation {
 $RepoRoot = [System.IO.Path]::GetFullPath($RepoRoot)
 $NodeExe = [System.IO.Path]::GetFullPath($NodeExe)
 $SimcExe = [System.IO.Path]::GetFullPath($SimcExe)
 $WowDbPath = [System.IO.Path]::GetFullPath($WowDbPath)
 $ProgramDataRoot = [System.IO.Path]::GetFullPath($ProgramDataRoot)
+$PowerShellCommand = Get-Command $PowerShellExe -ErrorAction Stop
+$PowerShellExe = [System.IO.Path]::GetFullPath($PowerShellCommand.Source)
 $manifestPath = Join-Path $ProgramDataRoot "runtime.json"
 $wrapperPath = Join-Path $RepoRoot "ops\windows\Invoke-WowHelperTask.ps1"
 $definitionsPath = Join-Path $RepoRoot "ops\windows\task-definitions.json"
@@ -61,6 +65,9 @@ $paths = [ordered]@{
     backupsPath = $backupsPath
     dailyStatusPath = $dailyStatusPath
     statusDirectory = $statusDirectory
+    pwshExe = $PowerShellExe
+    wrapper = $wrapperPath
+    taskDefinitions = $definitionsPath
 }
 if (-not [string]::IsNullOrWhiteSpace($HandleExe)) {
     $HandleExe = [System.IO.Path]::GetFullPath($HandleExe)
@@ -71,6 +78,7 @@ if (-not [string]::IsNullOrWhiteSpace($HandleExe)) {
 $hashes = [ordered]@{
     nodeExe = (Get-FileHash -LiteralPath $NodeExe -Algorithm SHA256).Hash.ToLowerInvariant()
     simcExe = (Get-FileHash -LiteralPath $SimcExe -Algorithm SHA256).Hash.ToLowerInvariant()
+    pwshExe = (Get-FileHash -LiteralPath $PowerShellExe -Algorithm SHA256).Hash.ToLowerInvariant()
     wrapper = (Get-FileHash -LiteralPath $wrapperPath -Algorithm SHA256).Hash.ToLowerInvariant()
     taskDefinitions = (Get-FileHash -LiteralPath $definitionsPath -Algorithm SHA256).Hash.ToLowerInvariant()
 }
@@ -102,6 +110,7 @@ if (-not $SkipTaskRegistration) {
 
 Write-Host "runtime manifest 已安装：$manifestPath"
 Write-Host "wrapper：$wrapperPath"
+}
 
 function Register-WowHelperTask($Definition, $Credential, [string] $WrapperPath, [string] $ManifestPath, [string] $PowerShellExe, [string] $ExportDirectory) {
     $argument = "-NoProfile -NonInteractive -File `"$WrapperPath`" -Task $($Definition.task) -ManifestPath `"$ManifestPath`""
@@ -158,3 +167,5 @@ function Set-RestrictedDirectoryAcl([string] $Path, [string] $RuntimeUser) {
     $acl.AddAccessRule([System.Security.AccessControl.FileSystemAccessRule]::new("Administrators", "FullControl", $inherit, $propagate, "Allow"))
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
+
+Invoke-Installation

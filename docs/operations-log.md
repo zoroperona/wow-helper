@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:36 +08:00 — 新增 WowHelper.ProcessHost 基础实现
+
+- 环境：本地开发 / Windows CI 待验证
+- 执行人：Codex 辅助
+- 变更类型：Windows runtime / 进程控制 / CI
+- 变更前：SimC 只有 Node 直接子进程 `child.kill()`，没有跨进程单实例或 Windows Job Object helper
+- 变更后：新增独立 `runtime/WowHelper.Runtime.slnx`；ProcessHost 提供安全参数解析、Windows named mutex、`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`、超时/取消时 `TerminateJobObject`、PID/创建时间状态文件和固定 40/50/60 退出码
+- 操作摘要：仅新增 helper 和参数测试，尚未让 Node/SimC 调用该 helper；Windows CI 新增 runtime restore/test/build
+- 备份/回滚点：未触碰业务 SQLite、wow-db、SimC 进程或 Windows 任务
+- 验证结果：本机无 `dotnet`，仅完成静态 diff/XML 检查；需 Windows CI 编译并运行测试
+- 结果：待 Windows CI 验证
+- 关联：`runtime/src/WowHelper.ProcessHost`、`runtime/tests/WowHelper.ProcessHost.Tests`、`.github/workflows/ci.yml`
+
 ### 2026-08-20 16:28 +08:00 — 增加 Windows runtime 安装器与任务定义
 
 - 环境：本地开发 / Windows runner 待验证

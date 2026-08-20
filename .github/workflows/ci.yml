@@ -61,3 +61,6 @@ jobs:
       - run: dotnet restore WowDb.slnx
       - run: dotnet test WowDb.slnx -c Release --no-restore
       - run: dotnet build WowDb.slnx -c Release --no-restore
+      - run: dotnet restore ../runtime/WowHelper.Runtime.slnx
+      - run: dotnet test ../runtime/WowHelper.Runtime.slnx -c Release --no-restore
+      - run: dotnet build ../runtime/WowHelper.Runtime.slnx -c Release --no-restore

@@ -8,66 +8,58 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$startedAt = [DateTime]::UtcNow
-$statusDirectory = $null
-$statusPath = $null
-$exitCode = 1
 
-try {
-    $manifest = Read-Manifest $ManifestPath
-    $statusDirectory = [string]$manifest.paths.statusDirectory
-    if ([string]::IsNullOrWhiteSpace($statusDirectory)) {
-        throw "runtime manifest 缺少 paths.statusDirectory"
-    }
-    $statusPath = Join-Path $statusDirectory "$Task.json"
-    Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status "running" -ExitCode $null
-
-    Assert-RunAs $manifest
-    Assert-PathAndHashes $manifest
-
-    $node = [string]$manifest.paths.nodeExe
-    $repo = [string]$manifest.paths.repoRoot
-    $script = Join-Path $repo "scripts\run-daily-pipeline.mjs"
-    $arguments = @()
-    switch ($Task) {
-        "daily" { }
-        "daily-check" { $arguments = @("--check") }
-        "backup" {
-            $script = Join-Path $repo "scripts\backup-database.mjs"
+function Invoke-Task {
+    $startedAt = [DateTime]::UtcNow
+    $statusPath = $null
+    try {
+        $manifest = Read-Manifest $ManifestPath
+        $statusDirectory = [string]$manifest.paths.statusDirectory
+        if ([string]::IsNullOrWhiteSpace($statusDirectory)) {
+            throw "runtime manifest 缺少 paths.statusDirectory"
         }
-        "validate" {
-            $script = Join-Path $repo "scripts\validate-runtime.mjs"
+        $statusPath = Join-Path $statusDirectory "$Task.json"
+        Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status "running" -ExitCode $null
+
+        Assert-RunAs $manifest
+        Assert-PathAndHashes $manifest
+
+        $node = [string]$manifest.paths.nodeExe
+        $repo = [string]$manifest.paths.repoRoot
+        $script = Join-Path $repo "scripts\run-daily-pipeline.mjs"
+        $arguments = @()
+        switch ($Task) {
+            "daily" { }
+            "daily-check" { $arguments = @("--check") }
+            "backup" { $script = Join-Path $repo "scripts\backup-database.mjs" }
+            "validate" { $script = Join-Path $repo "scripts\validate-runtime.mjs" }
         }
-    }
-    if (-not (Test-Path -LiteralPath $script -PathType Leaf)) {
-        throw "任务脚本不存在：$script"
-    }
+        if (-not (Test-Path -LiteralPath $script -PathType Leaf)) {
+            throw "任务脚本不存在：$script"
+        }
 
-    $env:LOOT_ALLOCATOR_DB = [string]$manifest.paths.databasePath
-    $env:WOW_DB_PATH = [string]$manifest.paths.wowDbPath
-    $env:SIMC_PATH = [string]$manifest.paths.simcExe
-    $env:SIMC_RUNS_PATH = [string]$manifest.paths.simcRunsPath
-    $env:BACKUPS_PATH = [string]$manifest.paths.backupsPath
-    $env:DAILY_TASK_STATUS_PATH = [string]$manifest.paths.dailyStatusPath
-    $env:WOWHELPER_RUNTIME_MANIFEST = $ManifestPath
-    if ($manifest.paths.handleExe) {
-        $env:WOWHELPER_HANDLE_PATH = [string]$manifest.paths.handleExe
-    }
+        $env:LOOT_ALLOCATOR_DB = [string]$manifest.paths.databasePath
+        $env:WOW_DB_PATH = [string]$manifest.paths.wowDbPath
+        $env:SIMC_PATH = [string]$manifest.paths.simcExe
+        $env:SIMC_RUNS_PATH = [string]$manifest.paths.simcRunsPath
+        $env:BACKUPS_PATH = [string]$manifest.paths.backupsPath
+        $env:DAILY_TASK_STATUS_PATH = [string]$manifest.paths.dailyStatusPath
+        $env:WOWHELPER_RUNTIME_MANIFEST = $ManifestPath
+        if ($manifest.paths.handleExe) {
+            $env:WOWHELPER_HANDLE_PATH = [string]$manifest.paths.handleExe
+        }
 
-    & $node $script @arguments
-    $exitCode = if ($null -eq $LASTEXITCODE) { 1 } else { [int]$LASTEXITCODE }
-    if ($exitCode -eq 0) {
-        Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status "succeeded" -ExitCode $exitCode
-    } else {
-        Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status "failed" -ExitCode $exitCode
+        & $node $script @arguments
+        $exitCode = if ($null -eq $LASTEXITCODE) { 1 } else { [int]$LASTEXITCODE }
+        Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status $(if ($exitCode -eq 0) { "succeeded" } else { "failed" }) -ExitCode $exitCode
+        exit $exitCode
+    } catch {
+        Write-Error $_
+        if ($statusPath) {
+            Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status "failed" -ExitCode 40
+        }
+        exit 40
     }
-    exit $exitCode
-} catch {
-    Write-Error $_
-    if ($statusPath) {
-        Write-Status -Path $statusPath -Task $Task -StartedAt $startedAt -Status "failed" -ExitCode 40
-    }
-    exit 40
 }
 
 function Read-Manifest([string] $Path) {
@@ -132,3 +124,5 @@ function Write-Status([string] $Path, [string] $Task, [DateTime] $StartedAt, [st
     $value | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $temporary -Encoding UTF8
     Move-Item -LiteralPath $temporary -Destination $Path -Force
 }
+
+Invoke-Task

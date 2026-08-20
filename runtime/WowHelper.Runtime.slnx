@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/WowHelper.ProcessHost/WowHelper.ProcessHost.csproj" />
+  <Project Path="tests/WowHelper.ProcessHost.Tests/WowHelper.ProcessHost.Tests.csproj" />
+</Solution>
