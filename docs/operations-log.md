@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-20 16:57 +08:00 — 实现 backup-health 时间门禁核心
+
+- 环境：本地开发
+- 执行人：Codex 辅助
+- 变更类型：备份门禁 / 测试
+- 变更前：系统健康仅按备份文件 mtime 和两天阈值判断，没有使用 SQLite 内容 `generatedAt` 或双目标 receipt
+- 变更后：新增共享 backup-health evaluator，验证双 target receipt、时间顺序和格式；按内容 age 执行 20 小时 warning/禁高风险、22 小时 blocked/禁常规写入、24 小时 recovery-only，并拒绝 future generatedAt、超容差 verifiedAt、backupId 重放和 generatedAt 回拨
+- 操作摘要：当前只提供纯门禁核心和测试，尚未替换 legacy system-health 或接入 Web/调度器/publisher
+- 备份/回滚点：不适用；未读写真实备份状态
+- 验证结果：typecheck、15 个测试文件共 51 个测试和 build 全部通过；覆盖 20/22/24 小时边界、缺失/乱序/未来时间、重复 target 和单调推进
+- 结果：核心逻辑成功，receipt writer 和调用方接入待实现
+- 关联：`loot-allocator/src/backup-health.ts`、`loot-allocator/tests/backup-health.test.ts`
+
 ### 2026-08-20 16:54 +08:00 — 实现双目标备份的 prepare 阶段
 
 - 环境：本地开发 / 隔离测试数据库
