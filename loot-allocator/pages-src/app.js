@@ -71,6 +71,7 @@ function hydratePublicationChrome() {
   document.querySelector("#seasonLabel").textContent = `赛季 ${snapshot.season.key}`;
   document.querySelector("#publishedAt").textContent = formatDate(snapshot.publishedAt, "short");
   document.querySelector("#footerSeason").textContent = `赛季 ${snapshot.season.key} · ${snapshot.season.gameVersion}`;
+  document.querySelector("#footerVersion").textContent = `应用 ${snapshot.applicationVersion || "未知"}`;
   document.querySelector("#footerRevision").textContent = `版本 ${snapshot.revision}`;
   const age = Date.now() - new Date(snapshot.publishedAt).getTime();
   document.querySelector("#staleBanner").hidden = !Number.isFinite(age) || age < 24 * 60 * 60 * 1000;
@@ -174,7 +175,7 @@ function renderTeamRows(players) {
   if (!players.length) return `<div class="empty-state">没有符合条件的成员</div>`;
   return players.map((player) => {
     const freshness = dataFreshness(player.latestSimulationAt);
-    return `<a class="team-row" href="#/player/${encodeURIComponent(player.id)}">
+    return `<a class="team-row" href="#/player/${encodeURIComponent(player.publicPlayerKey)}">
       <div class="player-cell">
         <span class="player-copy"><strong class="${className(player.className)}">${escapeHtml(player.name)}</strong><small>${escapeHtml(player.realmName)}</small></span>
       </div>
@@ -189,7 +190,7 @@ function renderTeamRows(players) {
 }
 
 async function renderPlayer(playerId) {
-  const summary = state.snapshot.players.find((player) => player.id === playerId);
+  const summary = state.snapshot.players.find((player) => player.publicPlayerKey === playerId);
   if (!summary) {
     renderError(new Error("找不到这名团队成员"));
     return;
@@ -468,8 +469,8 @@ function matchesStats(item, selected) {
 
 async function renderLoadout() {
   const players = state.snapshot.players.filter((player) => player.hasEquipment);
-  if (!state.loadout.playerId || !players.some((player) => player.id === state.loadout.playerId)) {
-    state.loadout.playerId = players[0]?.id || "";
+  if (!state.loadout.playerId || !players.some((player) => player.publicPlayerKey === state.loadout.playerId)) {
+    state.loadout.playerId = players[0]?.publicPlayerKey || "";
     state.loadout.selections = {};
   }
   if (!state.loadout.playerId) {
@@ -511,7 +512,7 @@ function renderLoadoutView(detail, players) {
     <section>
       <div class="view-heading"><div><p class="eyebrow">Dynamic loadout</p><h1>动态配装</h1><p>以英雄榜当前装备为基线，自由替换团本与大秘境掉落。</p></div><span class="heading-meta">${escapeHtml(detail.player.name)} · ${escapeHtml(detail.player.specialization || roleLabels[detail.player.raidRole])}</span></div>
       <div class="loadout-toolbar">
-        <label><span>成员</span><select id="loadoutPlayer">${players.map((player) => `<option value="${escapeAttr(player.id)}" ${player.id === state.loadout.playerId ? "selected" : ""}>${escapeHtml(player.name)} · ${escapeHtml(player.specialization || roleLabels[player.raidRole])}</option>`).join("")}</select></label>
+          <label><span>成员</span><select id="loadoutPlayer">${players.map((player) => `<option value="${escapeAttr(player.publicPlayerKey)}" ${player.publicPlayerKey === state.loadout.playerId ? "selected" : ""}>${escapeHtml(player.name)} · ${escapeHtml(player.specialization || roleLabels[player.raidRole])}</option>`).join("")}</select></label>
         <label><span>候选来源</span><select id="loadoutSource">${option("all", "团本 + 大秘境", state.loadout.source)}${option("raid", "仅团本", state.loadout.source)}${option("dungeon", "仅大秘境", state.loadout.source)}</select></label>
         <label><span>团本难度</span><select id="loadoutDifficulty">${Object.entries(difficultyLabels).map(([key, label]) => option(key, label, state.loadout.difficulty)).join("")}</select></label>
         <label><span>大秘境模拟档位</span><select id="loadoutDungeonDifficulty">${mythicPlusLevelOptions().map(({ key, label }) => option(key, label, state.loadout.dungeonDifficulty)).join("")}</select></label>
@@ -690,7 +691,7 @@ function selectedLoadout(current, candidateIndex) {
 
 function filteredLoadoutCandidates(player, candidates, slot) {
   const query = normalize(state.loadout.query);
-  const weights = state.playerDetails.get(player.id)?.weights?.weights || state.playerDetails.get(player.id)?.simulation?.weights || {};
+  const weights = state.playerDetails.get(player.publicPlayerKey)?.weights?.weights || state.playerDetails.get(player.publicPlayerKey)?.simulation?.weights || {};
   return candidates.filter((item) => {
     if (state.loadout.source !== "all" && item.sourceType !== state.loadout.source) return false;
     if (!slotAcceptsItem(slot, item)) return false;
@@ -982,7 +983,7 @@ function renderHistory() {
   const query = normalize(state.history.query);
   const iconIndex = catalogItemIndex();
   const records = state.snapshot.allocations.filter((entry) => {
-    if (state.history.playerId && entry.playerId !== state.history.playerId) return false;
+    if (state.history.playerId && entry.playerKey !== state.history.playerId) return false;
     return !query || normalize([entry.playerName, entry.raidName, entry.bossName, entry.itemName, entry.note].join(" ")).includes(query);
   });
   app.innerHTML = `
@@ -990,7 +991,7 @@ function renderHistory() {
       <div class="view-heading"><div><p class="eyebrow">Loot ledger</p><h1>拾取记录</h1><p>当前赛季所有公开分配记录，按时间从新到旧排列。</p></div><span class="heading-meta">${state.snapshot.allocations.length} 条记录</span></div>
       <div class="history-layout">
         <aside class="history-filters" aria-label="拾取筛选">
-          <label class="filter-control"><span>成员</span><select id="historyPlayer"><option value="">全部成员</option>${state.snapshot.players.map((player) => `<option value="${escapeAttr(player.id)}" ${player.id === state.history.playerId ? "selected" : ""}>${escapeHtml(player.name)}</option>`).join("")}</select></label>
+          <label class="filter-control"><span>成员</span><select id="historyPlayer"><option value="">全部成员</option>${state.snapshot.players.map((player) => `<option value="${escapeAttr(player.publicPlayerKey)}" ${player.publicPlayerKey === state.history.playerId ? "selected" : ""}>${escapeHtml(player.name)}</option>`).join("")}</select></label>
           <label class="filter-control"><span>记录搜索</span><div class="search-field"><input id="historySearch" type="search" placeholder="装备、Boss 或备注" value="${escapeAttr(state.history.query)}" /></div></label>
         </aside>
         <div class="history-list" id="historyRows">${renderHistoryRows(records, iconIndex)}</div>
@@ -1000,7 +1001,7 @@ function renderHistory() {
   document.querySelector("#historySearch").addEventListener("input", (event) => {
     state.history.query = event.target.value;
     const nextQuery = normalize(state.history.query);
-    const filtered = state.snapshot.allocations.filter((entry) => (!state.history.playerId || entry.playerId === state.history.playerId) && (!nextQuery || normalize([entry.playerName, entry.raidName, entry.bossName, entry.itemName, entry.note].join(" ")).includes(nextQuery)));
+    const filtered = state.snapshot.allocations.filter((entry) => (!state.history.playerId || entry.playerKey === state.history.playerId) && (!nextQuery || normalize([entry.playerName, entry.raidName, entry.bossName, entry.itemName, entry.note].join(" ")).includes(nextQuery)));
     document.querySelector("#historyRows").innerHTML = renderHistoryRows(filtered, iconIndex);
   });
 }

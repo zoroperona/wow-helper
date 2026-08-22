@@ -28,6 +28,19 @@
 
 ## 日志
 
+### 2026-08-22 20:40 +08:00 — 收敛 GitHub Pages 公开快照边界
+
+- 环境：本地开发 / 隔离 Pages 构建
+- 执行人：Codex 辅助
+- 变更类型：Pages 公开数据 / 隐私边界 / 测试
+- 变更前：公开快照包含规则配置字段，成员和分配记录直接携带业务内部 ID；页面未显示应用版本
+- 变更后：公开成员使用页面专用 `publicPlayerKey`，分配记录使用对应 `playerKey` 且移除内部 allocation ID；公开快照移除规则配置数据；页面页脚显示应用版本
+- 操作摘要：只读成员列表、收益、动态配装、掉落目录和历史查看能力保留；未增加任何公开写入或分配接口；动态模拟申请仍等待 Worker/D1 中转实现
+- 备份/回滚点：未修改业务 SQLite；构建只读取本机数据；可回滚至提交 `f3b5ceb`
+- 验证结果：typecheck、全量测试 16/57、build、Pages safety 和本地 `pages:build` 全部通过；生成快照确认无 `rules`，成员字段为 `publicPlayerKey`，分配字段为 `playerKey`
+- 结果：成功；GitHub Pages workflow、artifact ingress 和模拟申请中转仍未启用
+- 关联：`loot-allocator/src/pages-publication.ts`、`loot-allocator/pages-src/app.js`、`loot-allocator/pages-src/index.html`
+
 ### 2026-08-20 20:43 +08:00 — 活动前执行全员收益模拟并重试失败成员
 
 - 环境：本地开发 / 活动前

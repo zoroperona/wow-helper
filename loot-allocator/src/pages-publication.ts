@@ -22,7 +22,7 @@ const wowheadIconBase = "https://wow.zamimg.com/images/wow/icons/large";
 const questionIconUrl = `${wowheadIconBase}/inv_misc_questionmark.jpg`;
 
 export interface PublicPlayerSummary {
-  id: string;
+  publicPlayerKey: string;
   name: string;
   realmName: string;
   className: string | null;
@@ -77,13 +77,14 @@ export async function buildStaticPublication(input: {
   const publishedAt = (input.publishedAt || new Date()).toISOString();
   const database = await LootDatabase.open(config.databasePath);
   const wowDb = new WowDbCatalog(config.wowDbPath, "12.1", "12.1");
+  const packageJson = JSON.parse(await readFile(join(appRoot, "package.json"), "utf8")) as { version?: string };
+  const applicationVersion = String(packageJson.version || "unknown");
 
   try {
     const season = database.getActiveSeason();
     const allPlayers = database.listPlayers();
     const activePlayers = allPlayers.filter((player) => player.isActive);
     const allocations = database.listAllocations(100_000);
-    const rules = database.listLootRules();
     const rawCatalog = wowDb.getCatalog();
     const rawMythicPlus = wowDb.getMythicPlusCatalog();
     const rawDetails = activePlayers.map((player) => ({
@@ -109,7 +110,7 @@ export async function buildStaticPublication(input: {
       const equipment = sanitizeEquipment(raw.equipment, itemIconUrls);
       const simulation = sanitizeSimulation(raw.simulation, wowDb);
       const summary: PublicPlayerSummary = {
-        id: player.id,
+        publicPlayerKey: publicPlayerKey(season.id, player.id),
         name: player.name,
         realmName: player.realmName,
         className: player.className,
@@ -129,12 +130,15 @@ export async function buildStaticPublication(input: {
       playerDetails.push({ schemaVersion: 1, player: summary, weights, equipment, simulation });
     }
 
-    const publicData = {
+      const publicData = {
       schemaVersion: 1,
+      applicationVersion,
       season: { key: season.seasonKey, gameVersion: season.gameVersion },
       players: playerSummaries,
-      allocations: allocations.map(({ seasonId: _seasonId, ...allocation }) => allocation),
-      rules: rules.map(({ id: _id, seasonId: _seasonId, ...rule }) => rule),
+      allocations: allocations.map(({ id: _id, seasonId: _seasonId, playerId, ...allocation }) => ({
+        ...allocation,
+        playerKey: publicPlayerKey(season.id, playerId),
+      })),
       catalog,
       mythicPlus,
     };
@@ -149,7 +153,7 @@ export async function buildStaticPublication(input: {
     await cp(sourcePath, outputPath, { recursive: true });
     await writeJson(join(outputPath, "data", "snapshot.json"), snapshot);
     await Promise.all(playerDetails.map((detail) =>
-      writeJson(join(outputPath, "data", "players", `${detail.player.id}.json`), detail),
+      writeJson(join(outputPath, "data", "players", `${detail.player.publicPlayerKey}.json`), detail),
     ));
     await writeFile(join(outputPath, ".nojekyll"), "", "utf8");
     await writeFile(join(outputPath, "publication.json"), `${JSON.stringify({
@@ -157,6 +161,8 @@ export async function buildStaticPublication(input: {
       publishedAt,
       revision,
       playerCount: playerSummaries.length,
+      applicationVersion,
+      wowDbBuild: catalog.build,
     }, null, 2)}\n`, "utf8");
 
     return { outputPath, revision, playerCount: playerSummaries.length };
@@ -164,6 +170,12 @@ export async function buildStaticPublication(input: {
     wowDb.close();
     database.close();
   }
+}
+
+function publicPlayerKey(seasonId: string, playerId: string): string {
+  return createHash("sha256")
+    .update(`wow-helper-public-player/v1:${seasonId}:${playerId}`)
+    .digest("hex");
 }
 
 function sanitizeWeights(cache: WeightCacheJson | null): PublicWeightCache | null {
